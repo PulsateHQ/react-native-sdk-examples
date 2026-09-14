@@ -1,0 +1,145 @@
+Pulsate React Native SDK License
+Copyright (c) 2026 Pulsate Mobile Ltd and its affiliates. All rights reserved.
+This software (the "SDK") is the property of Pulsate Mobile Ltd, an Irish
+company, together with its affiliates Pulsate North America Inc and Pulsate
+CUSO LLC (collectively, "Pulsate"). It is made available for download so that
+digital banking platform providers and other parties under agreement with
+Pulsate can integrate the Pulsate services into the applications they build
+and operate. It is not open source. The SDK is made available solely in
+connection with, and subject to, the valid written agreement between Pulsate
+and the applicable party covering the Pulsate services (the "Agreement"). If
+there is any conflict or inconsistency between this license and the Agreement,
+the Agreement controls and prevails.
+
+1. Permitted Use
+You may use the SDK only if you have a valid written Agreement with Pulsate
+covering the Pulsate services, and only to:
+(a) integrate the Pulsate services into applications that you build or operate
+    for financial institutions that are entitled to the Pulsate services under
+    the Agreement; and
+(b) distribute the SDK as a compiled, inseparable part of those applications
+    to their end users.
+Except for the limited rights expressly stated in this license and the
+Agreement, no license or other right in or to the SDK or any Pulsate
+Intellectual Property is granted, whether expressly, by implication, estoppel,
+exhaustion, or otherwise.
+You may modify the SDK where needed for that integration. Use of the SDK
+without an Agreement is not permitted.
+
+2. Restrictions
+Except as permitted in sections 1 and 3, you may not:
+(a) distribute, sublicense, sell, lease, rent, assign, transfer, publish,
+    disclose, or otherwise make the SDK available to any third party as a
+    standalone component, source or binary;
+(b) use the SDK, or any part of it, in any product or service that is not
+    connected to the Pulsate services;
+(c) enable the Pulsate services, through the SDK, for any financial
+    institution not entitled to them under the Agreement;
+(d) remove or alter any copyright, trademark, proprietary, confidentiality, or
+    other notice in the SDK;
+(e) use the Pulsate name or logos to endorse or promote any product without
+    prior written permission from Pulsate;
+(f) modify, adapt, translate, create derivative works of, reverse engineer,
+    decompile, disassemble, decode, or otherwise attempt to derive the source
+    code, underlying ideas, algorithms, structure, or non-public interfaces of
+    the SDK, except only to the extent that such restriction is prohibited by
+    applicable mandatory law;
+(g) circumvent, disable, interfere with, or defeat any access control,
+    authentication requirement, security feature, technical restriction, usage
+    limitation, or protective measure relating to the SDK or Pulsate services;
+    or
+(h) use the SDK or any Pulsate Intellectual Property to develop, train,
+    improve, benchmark, or support any product or service that competes with
+    or substitutes for the Pulsate services, except as expressly authorized in
+    writing by Pulsate.
+
+3. Access credentials
+The SDK connects to the Pulsate services using credentials that Pulsate issues
+through the Pulsate platform for a specific application. You may use those
+credentials only in the application they were issued for. You must keep them
+confidential and must not share them with any third party. You must not use
+the SDK, or any part of it, to access the Pulsate services with credentials
+not issued to you by Pulsate, or by any other means. Pulsate may revoke or
+replace credentials in accordance with the Agreement.
+
+4. Term
+This license ends automatically when the Agreement ends. On termination you
+must stop using the SDK and remove it from your applications at the next
+release and promptly delete or destroy all copies of the SDK in your
+possession or control, including all source, binary, cached, archived,
+development, test, and build copies. You must also cease distributing any new
+or updated application containing the SDK, except to the extent expressly
+permitted under the Agreement.
+
+5. Ownership
+As between you and Pulsate, Pulsate and its licensors retain all worldwide
+right, title, and interest, including all intellectual property and
+proprietary rights, in and to the SDK, the Pulsate services, Pulsate software,
+APIs, documentation, specifications, interfaces, content, data, trademarks,
+technology, know-how, inventions, methods, processes, designs, updates,
+upgrades, enhancements, fixes, modifications, and all derivative works of any
+of the foregoing (collectively, "Pulsate Intellectual Property"). All rights
+not expressly granted are reserved by Pulsate and its licensors.
+You may not create or claim ownership of any modification or derivative work
+of the SDK or other Pulsate Intellectual Property, except solely to the extent
+a non-waivable right arises under applicable mandatory law. No license,
+assignment, transfer, or other grant of any Pulsate Intellectual Property is
+made except for the limited right to use the SDK expressly stated in this
+license and the Agreement.
+For clarity, Pulsate acquires no ownership or other intellectual property
+rights in any application, integration code, configuration, workflow, or other
+materials independently developed or provided by you (collectively, the
+"Integration Application"), provided that such Integration Application does
+not incorporate, embed, reproduce, modify, or constitute any SDK or other
+Pulsate Intellectual Property. To the extent any SDK or other Pulsate
+Intellectual Property is incorporated into or used with an Integration
+Application, all right, title, and interest in that SDK or other Pulsate
+Intellectual Property remains exclusively with Pulsate or its licensors, and
+no ownership interest in such Pulsate Intellectual Property passes to you.
+
+6. No warranty
+THE SDK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE, AND NON-INFRINGEMENT. PULSATE DOES NOT WARRANT THAT THE
+SDK WILL BE ERROR-FREE, UNINTERRUPTED, SECURE, OR COMPATIBLE WITH ANY
+PARTICULAR PLATFORM OR SOFTWARE. Any warranty, support, or service commitment
+for the SDK is set out in the Agreement and nowhere else.
+
+7. Limitation of liability
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, PULSATE IS NOT LIABLE UNDER THIS
+LICENSE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, PUNITIVE OR CONSEQUENTIAL
+DAMAGES, OR FOR ANY LOSS OF DATA, PROFITS, REVENUE OR BUSINESS, OR GOODWILL
+ARISING FROM THE USE OF THE SDK, REGARDLESS OF THE THEORY OF LIABILITY.
+Liability between Pulsate and you is governed by the Agreement.
+
+8. Relationship to the Agreement
+This license supplements, and does not replace, the Agreement. The SDK is
+provided solely for use in connection with the Agreement.
+If any provision of this license conflicts or is inconsistent with the
+Agreement, the Agreement controls and prevails to the fullest extent of the
+conflict or inconsistency.
+Nothing in this license expands Pulsate's obligations, warranties,
+indemnities, service levels, support commitments, or liability beyond those
+expressly stated in the Agreement or limits any right or remedy available to
+Pulsate under the Agreement.
+
+9. Versions of this license
+Each version of the SDK is governed by the license file included with it.
+Pulsate may update this license from time to time and may publish or release
+future versions of the SDK under revised or updated license terms. By
+downloading, installing, accessing, updating to, or using any future version
+of the SDK after the applicable updated license terms have been made
+available, you acknowledge and agree that such conduct constitutes your
+acceptance of, and agreement to be bound by, those updated license terms.
+If you do not agree to the updated license terms, you must not download,
+install, access, update to, or use the applicable future version of the SDK.
+
+10. Third-party components
+The SDK depends on the Pulsate iOS SDK and the Pulsate Android SDK, which are
+subject to this same license, and on open source packages that are subject to
+their own licenses as declared in their package metadata.
+
+11. Governing law
+This license is governed by the laws of Ireland.
+
+Questions about this license: legal@pulsatehq.com
