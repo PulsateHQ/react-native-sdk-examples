@@ -1,0 +1,57 @@
+# Resolve react_native_pods.rb with node to allow for hoisting
+require Pod::Executable.execute_command('node', ['-p',
+  'require.resolve(
+    "react-native/scripts/react_native_pods.rb",
+    {paths: [process.argv[1]]},
+  )', __dir__]).strip
+
+platform :ios, min_ios_version_supported
+prepare_react_native_project!
+
+linkage = ENV['USE_FRAMEWORKS']
+if linkage != nil
+  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
+  use_frameworks! :linkage => linkage.to_sym
+end
+
+target 'ReactNativeSdkExample' do
+  config = use_native_modules!
+
+  # RNFirebase 24 pulls Swift pods (FirebaseCoreInternal) that import
+  # GoogleUtilities, which ships no module map. Under the default static-library
+  # linkage CocoaPods refuses that combination. Opting these two into modular
+  # headers is the narrow fix; switching the whole app to
+  # `use_frameworks! :linkage => :static` would change how PULPulsate and the
+  # PulsateNotificationService target link as well.
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'FirebaseCoreInternal', :modular_headers => true
+
+  # AppDelegate.swift imports FirebaseMessaging directly, to hand the APNs
+  # token over now that FirebaseAppDelegateProxyEnabled is false. RNFBMessaging
+  # only depends on it transitively, which under static-library linkage leaves
+  # no module for the app target to import — hence the explicit entry.
+  pod 'FirebaseMessaging', :modular_headers => true
+
+  use_react_native!(
+    :path => config[:reactNativePath],
+    # An absolute path to your application root.
+    :app_path => "#{Pod::Config.instance.installation_root}/.."
+  )
+
+  # The test bundle inherits search paths rather than linking its own
+  # copy of the pod: it resolves every library symbol from the host app,
+  # which already links it. Linking a second copy makes the runtime log a
+  # duplicate-class warning for every class.
+  target 'ReactNativeSdkExampleTests' do
+    inherit! :search_paths
+  end
+
+  post_install do |installer|
+    react_native_post_install(
+      installer,
+      config[:reactNativePath],
+      :mac_catalyst_enabled => false,
+      # :ccache_enabled => true
+    )
+  end
+end

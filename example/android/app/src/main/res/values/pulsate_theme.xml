@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <color name="pulsate_small_in_app_message_background_color">#00C853</color>
+  <color name="pulsate_big_in_app_message_background_color">#00C853</color>
+  <color name="pulsate_big_in_app_one_button_color">#D50000</color>
+  <color name="pulsate_big_in_app_one_button_text_color">#FFFFFF</color>
+</resources>

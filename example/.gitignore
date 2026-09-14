@@ -1,0 +1,38 @@
+# Credentials. `npm install` creates credentials.local.ts from the committed
+# template; it holds your Pulsate app ID and key and must never be committed.
+src/credentials.local.ts
+
+# Firebase and Apple secrets, if you add them
+google-services.json
+ios/ReactNativeSdkExample/GoogleService-Info.plist
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.keystore
+!android/app/debug.keystore
+
+# Dependencies
+node_modules/
+ios/Pods/
+vendor/
+
+# Build output
+ios/build/
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+*.jsbundle
+
+# Editor and OS
+.DS_Store
+*.xcuserstate
+xcuserdata/
+.idea/
+.vscode/
+
+# Metro and logs
+.metro-health-check*
+npm-debug.log
+yarn-error.log
