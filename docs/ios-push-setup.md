@@ -44,7 +44,7 @@ yours. The Android guide is [Set up push notifications on Android](android-push-
    procedure in
    [Adding capabilities to your app](https://developer.apple.com/documentation/xcode/adding-capabilities-to-your-app).
 
-Step 4 writes the `aps-environment` entitlement and adds
+Point 4 writes the `aps-environment` entitlement and adds
 `remote-notification` to `UIBackgroundModes` in `Info.plist`.
 
 > [!IMPORTANT]
@@ -142,7 +142,8 @@ Rules for this switch:
 
 To remove notifications already on screen, call `clearAllNotifications()`.
 It removes every notification the app has posted, including those from other
-libraries, and sets the app-icon badge to zero. The SDK does the same on
+libraries, and every local notification the app has scheduled but not yet
+delivered. It sets the app-icon badge to zero. The SDK does the same on
 `logout()` and when a session starts for a different alias.
 
 ## 3. Forward the AppDelegate callbacks
@@ -223,12 +224,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 > `ExpoAppDelegate`, mark each one `override`. Call `super` where the sample
 > hands the callback on.
 
-The same calls from Objective-C:
+The same calls from Objective-C. The Pulsate import is `@import`, which
+needs modules. The app target builds the C++ in an `.mm` file without them,
+so turn them on for `AppDelegate.mm` only:
+
+1. In Xcode, select the app target and open **Build Phases**.
+2. Under **Compile Sources**, double-click the **Compiler Flags** cell of
+   `AppDelegate.mm`.
+3. Enter `-fmodules -fcxx-modules`.
+
+An Objective-C `AppDelegate.m` needs no flags.
 
 ```objective-c
 // AppDelegate.mm
 #import "AppDelegate.h"
-#import <PulsateReactNative/PulsateReactNative-Swift.h>   // Pulsate
+@import PulsateReactNative;   // Pulsate
 #import <React/RCTLinkingManager.h>
 
 @implementation AppDelegate
@@ -310,6 +320,132 @@ Rules for this step:
 > `iosPulsateAppDelegate: true`, remove every call in this step. With
 > `iosPulsateNotificationDelegate: true`, remove every call in step 4, and
 > note that notifications from other senders are then never presented.
+> `iosPulsateAppDelegate` is deprecated. A future major release of the iOS SDK
+> removes the mode it selects.
+
+### If the app uses a scene delegate
+
+Apps built with Xcode 27 must use the scene-based life cycle, or they fail to
+launch. Apple describes the move in
+[Transitioning to the UIKit scene-based life cycle](https://developer.apple.com/documentation/uikit/transitioning-to-the-uikit-scene-based-life-cycle).
+
+In a scene-based app, iOS delivers opened URLs to the scene delegate. It does
+not call the `AppDelegate`'s `openURL` method from step 3. User activities
+arrive in the scene delegate too. Add the calls marked `// Pulsate` to these
+two scene delegate methods:
+
+```swift
+// SceneDelegate.swift
+import PulsateReactNative   // Pulsate
+import React
+import UIKit
+
+class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+  var window: UIWindow?
+
+  // … your existing scene(_:willConnectTo:options:) and the rest …
+
+  func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+    for context in URLContexts {
+      if PulsatePush.application(open: context.url, options: [:]) {   // Pulsate
+        continue
+      }
+      RCTLinkingManager.application(UIApplication.shared, open: context.url, options: [:])
+    }
+  }
+
+  func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
+    if PulsatePush.application(continue: userActivity, restorationHandler: { _ in }) {   // Pulsate
+      return
+    }
+    RCTLinkingManager.application(
+      UIApplication.shared, continue: userActivity, restorationHandler: { _ in })
+  }
+}
+```
+
+The same calls from Objective-C. If your scene delegate is an `.mm` file,
+set the compiler flags from step 3 on it too.
+
+```objective-c
+// SceneDelegate.m
+#import "SceneDelegate.h"
+@import PulsateReactNative;   // Pulsate
+#import <React/RCTLinkingManager.h>
+
+@implementation SceneDelegate
+
+// … your existing scene:willConnectToSession:options: and the rest …
+
+- (void)scene:(UIScene *)scene openURLContexts:(NSSet<UIOpenURLContext *> *)URLContexts
+{
+  for (UIOpenURLContext *context in URLContexts) {
+    if ([PulsatePush applicationOpenURL:context.URL options:@{}]) {   // Pulsate
+      continue;
+    }
+    [RCTLinkingManager application:UIApplication.sharedApplication
+                           openURL:context.URL
+                           options:@{}];
+  }
+}
+
+- (void)scene:(UIScene *)scene continueUserActivity:(NSUserActivity *)userActivity
+{
+  if ([PulsatePush applicationContinueUserActivity:userActivity
+                                restorationHandler:^(NSArray *objects) {}]) {   // Pulsate
+    return;
+  }
+  [RCTLinkingManager application:UIApplication.sharedApplication
+            continueUserActivity:userActivity
+              restorationHandler:^(NSArray *objects) {}];
+}
+
+@end
+```
+
+Rules for a scene-based app:
+
+- The token and notification callbacks in step 3 stay on the `AppDelegate`.
+  Scenes have no equivalent of them. Step 4 is unchanged.
+- The `false` branch ends in `RCTLinkingManager`, for the same reason as in
+  step 3.
+- Pass empty options. Pulsate and `RCTLinkingManager` read only the URL.
+- A URL that launches the app does not reach the two methods above. It
+  arrives in `connectionOptions.urlContexts`, in
+  `scene(_:willConnectTo:options:)`. Pulsate cannot claim it there, because
+  `configure()` runs from JavaScript later.
+
+React Native reads a launch URL only from the launch options it starts with.
+After the move to a scene delegate, `Linking.getInitialURL()` returns `null`
+for the URL that opened the app, unless you pass it in. Calling
+`RCTLinkingManager` from `scene(_:willConnectTo:options:)` does not help:
+JavaScript is not listening yet. Where your scene delegate starts React
+Native, add the URL to the launch options:
+
+```swift
+// SceneDelegate.swift, inside scene(_:willConnectTo:options:)
+var launchOptions: [UIApplication.LaunchOptionsKey: Any] = [:]
+if let url = connectionOptions.urlContexts.first?.url {
+  launchOptions[.url] = url
+}
+reactNativeFactory.startReactNative(
+  withModuleName: "<YOUR_APP_NAME>", in: window, launchOptions: launchOptions)
+```
+
+The same from Objective-C:
+
+```objective-c
+// SceneDelegate.m, inside scene:willConnectToSession:options:
+NSMutableDictionary<UIApplicationLaunchOptionsKey, id> *launchOptions =
+    [NSMutableDictionary dictionary];
+NSURL *url = connectionOptions.URLContexts.anyObject.URL;
+if (url != nil) {
+  launchOptions[UIApplicationLaunchOptionsURLKey] = url;
+}
+[reactNativeFactory startReactNativeWithModuleName:@"<YOUR_APP_NAME>"
+                                          inWindow:window
+                                     launchOptions:launchOptions];
+```
 
 ## 4. Chain the notification-centre delegate
 
@@ -372,7 +508,7 @@ the step 3 methods still in it.
 ```objective-c
 // AppDelegate.mm
 #import "AppDelegate.h"
-#import <PulsateReactNative/PulsateReactNative-Swift.h>   // Pulsate
+@import PulsateReactNative;   // Pulsate
 #import <UserNotifications/UserNotifications.h>
 
 @interface AppDelegate () <UNUserNotificationCenterDelegate>
@@ -696,12 +832,16 @@ Use a development build on a physical iPhone and a Pulsate app in
 | Token registers and the user appears in the dashboard, but no push arrives | APNs environment mismatch: a development build against a Production Mode app, or the reverse | Step 1, the callout. Match the build to the app's mode in **App Manager** |
 | Pushes arrive but the dashboard records no opens, and campaign actions do not run | A forwarding call in step 3 or 4 is missing, or the notification is not a Pulsate one | Log `userInfo["sender"]` in `didReceive`; it must be `Pulsate`. Confirm `PulsatePush.didReceive` returns `true` |
 | Your own deep links or universal links stopped reaching JavaScript | The `false` branch of `openURL` or `continueUserActivity` returns `false` instead of calling `RCTLinkingManager` | Step 3. End both `false` branches in `RCTLinkingManager` |
+| After moving to a scene delegate, opened URLs reach neither Pulsate nor JavaScript | The URL calls are still only in the `AppDelegate`, which iOS no longer calls for URLs | Step 3, the scene delegate section. Forward from `scene(_:openURLContexts:)` |
+| After moving to a scene delegate, `Linking.getInitialURL()` returns `null` for the link that opened the app | The scene delegate starts React Native without the launch URL | Step 3, the scene delegate section. Pass the URL in the launch options |
+| `AppDelegate.mm` fails to build with "use of '@import' when C++ modules are disabled" | The file is Objective-C++ and modules are off for it | Step 3. Add `-fmodules -fcxx-modules` to the file's compiler flags |
 | The app hangs or crashes shortly after a notification | A delegate flag in `PulsateConfig` is `true` and the app still forwards | Step 3, the warning. Set the flag back to `false` or remove the forwarding |
 | Notifications from your other push library stop appearing | `iosPulsateNotificationDelegate` is `true`, or a `false` branch never calls the completion handler | Step 4. Set the flag to `false`; call the handler exactly once on every branch |
 | No Firebase push after adding Pulsate | `FirebaseAppDelegateProxyEnabled` is `NO` and the APNs token is no longer handed to Firebase | Step 4, the coexistence section, point 2. Set `Messaging.messaging().apnsToken` in the token callback |
 | A tap on a Pulsate notification opens the app but nothing is recorded | notifee older than 7.9.0 drops taps on notifications it did not post | Step 4, the coexistence section, point 3. Update `@notifee/react-native` to 7.9.0 or newer |
 | The notification arrives without its image | No Notification Service Extension, the extension is signed incorrectly, or its deployment target is above the device's iOS version | Step 5 |
-| Your other push library's action buttons are gone | Your categories were registered during a token callback and were overwritten | Step 2. Register your categories at startup, before you request the token |
+| Pulsate's action buttons are missing from its notifications | Your app or another library called `setNotificationCategories` after the SDK registered its categories, which replaced the whole set | Step 2. Register your categories at startup, or add them to the registered set as in [How it works](#how-it-works) |
+| Your notifications in one of your categories show no action buttons | The category identifier starts with `PUL`, which the SDK reserves, so the SDK removed the category | Rename the category |
 
 ## How it works
 
@@ -724,41 +864,34 @@ completes, token first. So the forwarding calls are safe from the first line
 of `didFinishLaunchingWithOptions`.
 
 **Notification categories.** When the device token is forwarded, the SDK
-registers its own action-button categories with `setNotificationCategories`,
-which replaces the whole set. The bridge reads the categories registered
-before the forward. Once the SDK has written its own, the bridge registers
-the union of both sets once on the main queue. Identifiers are deduplicated,
-and where an identifier is Pulsate's own, Pulsate's definition wins. This
-runs on every token forward, including the replay after `configure()` and a
-token refresh. It cannot protect a registration that lands between the
-bridge's read and its write. Your categories therefore belong at startup,
-before the token is requested. If the app cannot register early, register
-the union yourself in place of your own `setNotificationCategories` call:
+registers its own action-button categories. It keeps every category already
+registered, except identifiers that start with `PUL`: it removes those and
+adds its own set. `setNotificationCategories` replaces the whole set, so a
+call your app makes after the SDK has registered removes Pulsate's buttons.
+Your categories therefore belong at startup, before the token is requested.
+If the app cannot register early, add your categories to the registered set
+in place of your own `setNotificationCategories` call:
 
 ```swift
 import UserNotifications
-import PULPulsate
 
 func registerCategories(_ mine: Set<UNNotificationCategory>) {
-  guard let manager = PULPulsateFactory.getDefaultInstance()?
-    .getPulsateSystemManager() as? PULSystemManager else { return }
-
-  var byIdentifier: [String: UNNotificationCategory] = [:]
-  for category in manager.getAllNotificationCategories() {
-    byIdentifier[category.identifier] = category
+  let center = UNUserNotificationCenter.current()
+  center.getNotificationCategories { registered in
+    let mineIDs = Set(mine.map(\.identifier))
+    let kept = registered.filter { !mineIDs.contains($0.identifier) }
+    center.setNotificationCategories(kept.union(mine))
   }
-  for category in mine { byIdentifier[category.identifier] = category }
-
-  UNUserNotificationCenter.current()
-    .setNotificationCategories(Set(byIdentifier.values))
 }
 ```
 
-The `guard` registers nothing before `configure()` has run, because there is
-no SDK object yet and registering your set alone would wipe Pulsate's. Call
-it again once `configure()` resolves.
+The SDK registers the same way, reading the registered set and then
+writing it, on every token forward, including a token refresh. If your call
+overlaps it, the later write can drop the other's categories. Call the helper
+outside your token callback, and call it again after a token refresh if your
+categories must survive one.
 
-**Lifecycle callbacks.** The bridge observes the `UIApplication` state
+**Lifecycle callbacks.** The SDK observes the `UIApplication` state
 notifications itself, so session start and stop need no wiring from you.
 
 **`continueUserActivity`.** Pulsate does nothing with user activities in

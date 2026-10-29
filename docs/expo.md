@@ -30,9 +30,6 @@ prompts, and `configure()`. If you own your native projects instead, follow
 npx expo install @pulsatehq/react-native-sdk
 ```
 
-> Until the first stable release, published versions are previews on the
-> `next` dist-tag: append `@next` to the package name when installing.
-
 ```json
 // app.json
 {

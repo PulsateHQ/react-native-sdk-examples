@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
-import { TextInput } from 'react-native';
+import { Switch, TextInput } from 'react-native';
 
-import { configure } from '@pulsatehq/react-native-sdk';
+import {
+  configure,
+  isCrashReportingEnabled,
+  setCrashReportingEnabled,
+} from '@pulsatehq/react-native-sdk';
 
 import {
   clearStoredCredentials,
@@ -43,6 +47,13 @@ export function SettingsScreen({
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [saveError, setSaveError] = useState('');
   const [outcome, setOutcome] = useState<Outcome>({ kind: 'idle' });
+  const [crashEnabled, setCrashEnabled] = useState(true);
+  const [crashSetOutcome, setCrashSetOutcome] = useState<Outcome>({
+    kind: 'idle',
+  });
+  const [crashReadOutcome, setCrashReadOutcome] = useState<Outcome>({
+    kind: 'idle',
+  });
 
   useEffect(() => {
     let current = true;
@@ -92,10 +103,56 @@ export function SettingsScreen({
         kind: 'resolved',
         detail: 'Dispatched: configure resolved.',
       });
+      await readCrashReporting('Resolved after configure');
     } catch (error: unknown) {
       setOutcome({ kind: 'rejected', ...describeRejection(error) });
     }
   };
+
+  const onSetCrashReporting = async () => {
+    setCrashSetOutcome({ kind: 'pending' });
+    try {
+      await setCrashReportingEnabled(crashEnabled);
+      setCrashSetOutcome({ kind: 'resolved' });
+    } catch (error: unknown) {
+      setCrashSetOutcome({ kind: 'rejected', ...describeRejection(error) });
+    }
+  };
+
+  // The switch follows every successful read, so "Set" never writes this
+  // screen's own default over a stored `false` after a cold launch.
+  const readCrashReporting = async (
+    label: string,
+    isCurrent: () => boolean = () => true
+  ) => {
+    setCrashReadOutcome({ kind: 'pending' });
+    try {
+      const current = await isCrashReportingEnabled();
+      if (isCurrent()) {
+        setCrashEnabled(current);
+        setCrashReadOutcome({
+          kind: 'resolved',
+          detail: `${label}: ${current}.`,
+        });
+      }
+    } catch (error: unknown) {
+      if (isCurrent()) {
+        setCrashReadOutcome({ kind: 'rejected', ...describeRejection(error) });
+      }
+    }
+  };
+
+  const onIsCrashReporting = () => readCrashReporting('Resolved');
+
+  // Read once on mount, as LOC-01 does. It rejects CONFIGURATION_ERROR when
+  // bootstrap did not configure; a configure from this screen reads again.
+  useEffect(() => {
+    let current = true;
+    readCrashReporting('Resolved on mount', () => current);
+    return () => {
+      current = false;
+    };
+  }, []);
 
   const saveText =
     saveState === 'saved'
@@ -167,6 +224,33 @@ export function SettingsScreen({
         <Row
           label="What resolve means"
           value="Dispatched to native. Resolving means the call was handed over, not that the backend accepted it."
+        />
+      </Card>
+
+      <SectionHeader title="Crash reporting (CRASH-01)" />
+      <Card>
+        <Row
+          label="Pulsate crash reporting"
+          value="On by default. Kept on the device across restarts and sign-outs."
+          right={
+            <Switch value={crashEnabled} onValueChange={setCrashEnabled} />
+          }
+        />
+        <Button
+          title="Set crash reporting"
+          onPress={onSetCrashReporting}
+          disabled={crashSetOutcome.kind === 'pending'}
+        />
+        <OutcomeRow outcome={crashSetOutcome} pendingLabel="Setting…" />
+        <Button
+          title="Is crash reporting enabled?"
+          onPress={onIsCrashReporting}
+          disabled={crashReadOutcome.kind === 'pending'}
+        />
+        <OutcomeRow outcome={crashReadOutcome} pendingLabel="Reading…" />
+        <Row
+          label="When it applies"
+          value="Off stops capture and deletes waiting reports at once on both platforms. On resumes at once on iOS; on Android, after a launch with it off, from the next app start. iOS collects on 16.1 and later only."
         />
       </Card>
     </Screen>

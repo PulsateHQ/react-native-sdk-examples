@@ -26,6 +26,9 @@ export function Screen({ scroll = true, children }: ScreenProps) {
           // A tap on a button while the keyboard is up presses it, instead of
           // only dismissing the keyboard.
           keyboardShouldPersistTaps="handled"
+          // iOS only: insets the content by the keyboard and keeps the focused
+          // field visible. Android resizes the window instead (adjustResize).
+          automaticallyAdjustKeyboardInsets
         >
           {children}
         </ScrollView>

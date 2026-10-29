@@ -9,8 +9,9 @@ repository.
 
 ## Requirements
 
-Node 24.13 or later, Expo SDK 54, JDK 17 for Android, and Xcode 16 with
-CocoaPods for iOS. iOS builds need a Mac.
+Node 22.13 at minimum; Node 24 LTS recommended, and 24.13 is what this example
+is built and tested with. Expo SDK 54, JDK 17 for Android, and Xcode 16 or later
+with CocoaPods for iOS (built and tested with Xcode 26). iOS builds need a Mac.
 
 If `prebuild` fails with `Unable to locate the executable cmake`, React Native
 could not download its prebuilt Hermes and is building it from source instead.
@@ -21,6 +22,10 @@ Retry in a few minutes, or `brew install cmake`.
 ```bash
 npm install
 ```
+
+`package-lock.json` pins the dependency tree this release was tested with,
+so every clone installs the same tree. `npm ci` installs exactly that;
+`npm install` keeps it unless you change `package.json`.
 
 Installing creates `credentials.local.ts` from the committed template. If you
 installed with `--ignore-scripts`, copy `credentials.local.example.ts`
@@ -47,8 +52,9 @@ so inspecting the generated projects is the fastest way to see what it does.
 ## How it is put together
 
 `configure` is called once at bootstrap in `App.tsx`, then listeners are
-registered from `listeners.ts`, then a session starts. Credentials come from the
-gitignored `credentials.local.ts`.
+registered from `listeners.ts`. The session starts when you tap **Start
+session** with the alias you typed. Credentials come from the gitignored
+`credentials.local.ts`.
 
 | Path | What it holds |
 |---|---|

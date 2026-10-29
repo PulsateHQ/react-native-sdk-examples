@@ -339,14 +339,8 @@ Unlike the other profile fields on this page, it sends its own request. See
 [PrivacyLevel](#privacylevel) for the two values.
 
 Once Pulsate has stored `'unsubscribed'`, it refuses to start a session for
-that user: after a restart, [Sessions.startSession](sessions.md#startsession) rejects with
-`REQUEST_ERROR` on Android and resolves on iOS. On iOS, sending
-`'subscribed'` for the same alias lifts the refusal. On Android it does so
-only on the install that sent `'unsubscribed'`, and only when called after
-the rejected [Sessions.startSession](sessions.md#startsession) in the same process. On any other
-install, for example after a reinstall or on a second device, the call sends
-nothing because `'subscribed'` equals the level stored there, and the user
-stays refused.
+that user: [Sessions.startSession](sessions.md#startsession) rejects with `REQUEST_ERROR`, on
+both platforms, until the user is subscribed again.
 
 #### Parameters
 
@@ -400,6 +394,14 @@ reached Pulsate.
   [Sessions.startSession](sessions.md#startsession). Until that replay succeeds,
   [getPrivacy](#getprivacy) keeps answering a level Pulsate never received, across
   app launches.
+- To lift that refusal, call `setPrivacy('subscribed')` after a rejected
+  [Sessions.startSession](sessions.md#startsession) for that user, then start the session again.
+  On iOS this works on any install. If another level was set in the last
+  minute, iOS sends this one when that minute ends, so start the session
+  after it. On Android it works only on the install that sent
+  `'unsubscribed'`. On any other install, for example after a reinstall or on
+  a second device, the call sends nothing because `'subscribed'` equals the
+  level stored there, and the user stays refused.
 
 #### Example
 

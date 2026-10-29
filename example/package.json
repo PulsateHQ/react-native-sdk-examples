@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@notifee/react-native": "~7.9.0",
-    "@pulsatehq/react-native-sdk": "1.0.0",
+    "@pulsatehq/react-native-sdk": "1.1.0",
     "@react-native-async-storage/async-storage": "^3.1.1",
     "@react-native-firebase/app": "^24.1.1",
     "@react-native-firebase/messaging": "^24.1.1",
@@ -37,6 +37,6 @@
     "typescript": "^6.0.3"
   },
   "engines": {
-    "node": ">= 22.11.0"
+    "node": "^22.13.0 || ^24.3.0 || >= 25.0.0"
   }
 }

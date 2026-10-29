@@ -229,7 +229,7 @@ export function PushScreen() {
         />
         <Row
           label="Where it shows"
-          value="Log screen + toast: Android once after configure, then per push; iOS not with today's payloads"
+          value="Log screen + toast: Android after configure, session start, closing the feed, logout and pushes with a count; iOS 0 on Clear all notifications, logout and a new user"
         />
         <Row
           label="First value"
@@ -237,31 +237,27 @@ export function PushScreen() {
         />
       </Card>
 
-      {Platform.OS === 'ios' && (
-        <>
-          <SectionHeader title="Neighbour push stack" />
-          <Card>
-            <Text style={[type.caption, { color: colors.textMuted }]}>
-              RNFirebase and notifee are installed here only to prove Pulsate
-              coexists with another push stack that owns the notification
-              delegate. Pulsate does not need them. iOS only for now.
-            </Text>
-            <Button
-              title="Show a notifee notification"
-              onPress={onNotifeeLocal}
-              disabled={notifeeOutcome.kind === 'pending'}
-            />
-            <OutcomeRow outcome={notifeeOutcome} pendingLabel="Displaying…" />
-            <Button
-              title="Log the FCM token"
-              onPress={onLogFcmToken}
-              variant="secondary"
-              disabled={fcmTokenOutcome.kind === 'pending'}
-            />
-            <OutcomeRow outcome={fcmTokenOutcome} pendingLabel="Reading…" />
-          </Card>
-        </>
-      )}
+      <SectionHeader title="Neighbour push stack" />
+      <Card>
+        <Text style={[type.caption, { color: colors.textMuted }]}>
+          RNFirebase and notifee are installed here only to prove Pulsate
+          coexists with another push stack that owns the notification delegate.
+          Pulsate does not need them.
+        </Text>
+        <Button
+          title="Show a notifee notification"
+          onPress={onNotifeeLocal}
+          disabled={notifeeOutcome.kind === 'pending'}
+        />
+        <OutcomeRow outcome={notifeeOutcome} pendingLabel="Displaying…" />
+        <Button
+          title="Log the FCM token"
+          onPress={onLogFcmToken}
+          variant="secondary"
+          disabled={fcmTokenOutcome.kind === 'pending'}
+        />
+        <OutcomeRow outcome={fcmTokenOutcome} pendingLabel="Reading…" />
+      </Card>
     </Screen>
   );
 }

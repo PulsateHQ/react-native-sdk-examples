@@ -90,8 +90,8 @@ not by itself mean the inbox is empty.
 
 #### Remarks
 
-- On iOS an empty response leaves the call, and every call waiting with it,
-  pending until a later read succeeds.
+- On iOS an empty response or an error status resolves `0`, like any other
+  failure there.
 - The SDK reads the count at most once every 30 seconds, on both platforms.
   A call made shortly after another does not fail and does not return a
   cached number. It may wait until the SDK's next read, up to 30 seconds.
@@ -160,11 +160,10 @@ been stored.
 - The flag is stored locally and sent with the next profile update or
   session start. The call itself sends nothing, and nothing reports when the
   value reaches Pulsate.
-- **On iOS the flag does not survive a restart.**
-  [Sessions.configure](sessions.md#configure) marks the user authorized again, so an app that
-  marked someone unauthorized and was then closed comes back authorized.
-  Apply your own answer after `configure()` resolves on every launch. On
-  Android the value is stored per user and persists.
+- The flag survives an app restart on both platforms. On Android it is
+  stored per user. On iOS it is one value for the device, whichever user is
+  signed in, and a `configure()` with an app ID or key different from the
+  last one clears it, so the user is authorized again.
 - On Android the flag is written asynchronously after the promise resolves,
   and a failed write is not reported. On iOS the write is already done when
   the promise resolves. On both, a read with [isUserAuthorized](#isuserauthorized) after
@@ -212,9 +211,6 @@ it on sight. Before anything has written the flag the answer is `true`.
 - On Android the value can be older than the last
   [Sessions.userHasLoggedIn](sessions.md#userhasloggedin) or [Sessions.userHasLoggedOut](sessions.md#userhasloggedout) for a
   moment. Those write the same flag through the same asynchronous path.
-- The `true` this answers before anything has written the flag means
-  different things per platform. On Android it is a fresh install's default.
-  On iOS it is what [Sessions.configure](sessions.md#configure) last set, on every launch.
 
 #### Example
 
@@ -255,8 +251,9 @@ Resolves whether or not there was anything to show.
 
 - Nothing reports whether a screen was shown. With nothing held, and on iOS
   with the user unauthorized, it resolves and does nothing.
-- On iOS it shows what it held **once**. The held item is cleared as soon as
-  an authorized call runs, so a second call does nothing. On Android what it
+- On iOS the held item stays until it has been shown. Pulsate releases it
+  once the screen for it has opened, even if its content then fails to
+  load. A call whose screen never opened can be repeated. On Android what it
   re-opens stays available until one of the events below clears it.
 - On iOS it can bring back a refused push campaign and a refused in-app
   campaign. It can also bring back a refused call to action whose
@@ -274,6 +271,12 @@ Resolves whether or not there was anything to show.
   [Sessions.userHasLoggedOut](sessions.md#userhasloggedout) does **not** make it forget: a later
   [Sessions.userHasLoggedIn](sessions.md#userhasloggedin) re-opens what was refused before the
   sign-out.
+- On iOS the held item survives the app going to the background and being
+  restarted, for up to one hour after the most recent refusal. A newer
+  refusal replaces it, and a [Sessions.configure](sessions.md#configure) with a different
+  app ID or key clears it. On Android it is gone once the app leaves the
+  foreground.
+- On iOS a push is held only if the user tapped it.
 
 #### Example
 

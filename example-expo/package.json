@@ -12,7 +12,7 @@
     "postinstall": "node -e \"const f='credentials.local.ts',t=f.replace('.local','.local.example'),s=require('fs');s.existsSync(f)||s.copyFileSync(t,f)\""
   },
   "dependencies": {
-    "@pulsatehq/react-native-sdk": "1.0.0",
+    "@pulsatehq/react-native-sdk": "1.1.0",
     "expo": "~54.0.36",
     "expo-dev-client": "~6.0.21",
     "react": "19.1.0",
@@ -22,5 +22,8 @@
     "@types/react": "~19.1.0",
     "typescript": "~5.9.2"
   },
-  "private": true
+  "private": true,
+  "engines": {
+    "node": "^22.13.0 || ^24.3.0 || >= 25.0.0"
+  }
 }

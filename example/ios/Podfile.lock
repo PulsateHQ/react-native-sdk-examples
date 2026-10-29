@@ -101,10 +101,8 @@ PODS:
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
   - PromisesObjC (2.4.1)
-  - PULPulsate (4.8.3)
-  - PulsateReactNative (0.1.0):
+  - PulsateReactNative (1.0.0):
     - hermes-engine
-    - PULPulsate (= 4.8.3)
     - RCTRequired
     - RCTTypeSafety
     - React-Core
@@ -2138,7 +2136,6 @@ SPEC REPOS:
     - GoogleUtilities
     - nanopb
     - PromisesObjC
-    - PULPulsate
 
 EXTERNAL SOURCES:
   AsyncStorage:
@@ -2314,11 +2311,10 @@ SPEC CHECKSUMS:
   FirebaseMessaging: ed18fb50634e6e85b5d3e77e628c21e2c928cc53
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
   GoogleUtilities: 766ace00c6b10d8148408f329d10c4f051931850
-  hermes-engine: 96775910d7a933aea5444a066443950e465e585c
+  hermes-engine: 880340c68590d7f80fd321bab3a306110f756a3d
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   PromisesObjC: 752c3227f599e3467650e47ea36f433eeb10c273
-  PULPulsate: 44b82c5b459403050c0a9e71185569795fb215cd
-  PulsateReactNative: 27fcf731aa99b124296251f056981ae3b722d14f
+  PulsateReactNative: 9e6dffcd737d200aa01320c315409fe8beba96a0
   RCTDeprecation: 3bb167081b134461cfeb875ff7ae1945f8635257
   RCTRequired: 74839f55d5058a133a0bc4569b0afec750957f64
   RCTSwiftUI: 87a316382f3eab4dd13d2a0d0fd2adcce917361a
@@ -2327,7 +2323,7 @@ SPEC CHECKSUMS:
   React: 1b1536b9099195944034e65b1830f463caaa8390
   React-callinvoker: 6dff6d17d1d6cc8fdf85468a649bafed473c65f5
   React-Core: 00faa4d038298089a1d5a5b21dde8660c4f0820d
-  React-Core-prebuilt: 032303db1ef4e170f5ec7ce2afb3143ff0c1ceef
+  React-Core-prebuilt: 9d68452e2a9dcaa3e00cfeb64559b54f2873ac18
   React-CoreModules: a17807f849bfd86045b0b9a75ec8c19373b482f6
   React-cxxreact: c7b53ace5827be54048288bce5c55f337c41e95f
   React-debug: e1f00fcd2cef58a2897471a6d76a4ef5f5f90c74
@@ -2389,13 +2385,13 @@ SPEC CHECKSUMS:
   ReactAppDependencyProvider: 5787b37b8e2e51dfeab697ec031cc7c4080dcea2
   ReactCodegen: b3184a229afd01e7f8058dd81b805b843caa2bf9
   ReactCommon: fe2a3af8975e63efa60f95fca8c34dc85deee360
-  ReactNativeDependencies: 1d6eba919d6568d845dfc1d962400f0eb38cdb13
-  RNFBApp: 0457b250423f83be3ff28a9b7a225b1182b09312
-  RNFBMessaging: 5357c04fe4dc0304b8ef1ff4c8615d1e5521248b
-  RNNotifee: 935f3ea8c134c88cbf8b13ea0c97c72c09ad2116
+  ReactNativeDependencies: 1a937e680af57eb4849c2ce879f67d35c543b0bf
+  RNFBApp: 7a47a118d5a2632db57b0dcc560e3488ce1552fd
+  RNFBMessaging: cc53abc87e7dc5bb201141f7ff0b9acd4082e693
+  RNNotifee: 271cfeb505183d2cd1b858c14c3968b6ca30a642
   RNScreens: de068bbd7d91b820fedac25c597d4b14830de74b
   Yoga: e83c3121d079541e69f3c5c623faaaf933fb5812
 
-PODFILE CHECKSUM: 445334bd8181dabf91ff3a7ee026e00ed3eabcad
+PODFILE CHECKSUM: adea279e95d2f8e4979e3c7fe7f0e7bb3e40e1ab
 
 COCOAPODS: 1.15.2

@@ -56,6 +56,8 @@ module.exports = () => ({
           theme: {
             colors: {
               bigInAppOneButton: '#FF00AA',
+              // The one key that takes alpha (#AARRGGBB).
+              bigInAppOverlay: '#B300E5FF',
               bigInAppHeader: '#00E5FF',
               inAppRipple: '#FFD400',
             },

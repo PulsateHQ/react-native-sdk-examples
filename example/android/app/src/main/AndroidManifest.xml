@@ -9,14 +9,6 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-    <!-- Declared uncapped, and with `replace`, so it survives the
-         manifest merge. A dependency that declares WAKE_LOCK with a
-         maxSdkVersion would otherwise cap it for the whole app, and a
-         push arriving in the background needs a wake lock to be
-         handled. -->
-    <uses-permission
-      android:name="android.permission.WAKE_LOCK"
-      tools:node="replace" />
 
     <application
       android:name=".MainApplication"

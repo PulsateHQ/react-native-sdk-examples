@@ -138,6 +138,13 @@ install, access, update to, or use the applicable future version of the SDK.
 The SDK depends on the Pulsate iOS SDK and the Pulsate Android SDK, which are
 subject to this same license, and on open source packages that are subject to
 their own licenses as declared in their package metadata.
+The npm package includes unmodified copies of the Pulsate iOS SDK binary
+(PULPulsate.xcframework), its debug symbols, and its license file. These
+copies are part of the SDK and are covered by this license. For these copies,
+this license applies in place of the iOS SDK license file. Pulsate publishes
+the package to npm and other package registries. Copies made by those
+registries, their mirrors and caches while serving the package are permitted.
+This gives no one else the right to distribute these files on their own.
 
 11. Governing law
 This license is governed by the laws of Ireland.

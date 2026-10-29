@@ -11,5 +11,6 @@
 | [In-app notifications](in-app-notifications.md) | Control whether in-app messages are shown, how long a small banner stays on screen, and re-show a withheld message. |
 | [Push notifications](push-notifications.md) | The per-user push preference and clearing the notification tray. Native push setup is in the platform guides. |
 | [Location](location.md) | Turn Pulsate's location tracking on or off, read the last known fix, and follow geofence crossings. |
+| [Crash reporting](crash-reporting.md) | Turn the native SDKs' crash reporting off or on, and read the stored choice. |
 | [Events](events.md) | Subscribe to the events the SDK initiates. |
 | [Errors](errors.md) | The error type every promise rejects with, and the rejection types. |

@@ -88,24 +88,36 @@ Rules for this step:
 - The SDK reads the count at most once every 30 seconds, on both platforms.
   A call made sooner waits for the next read, up to 30 seconds, and resolves
   with that count. Calls that wait together resolve with the same number.
+- On Android the SDK also reads the count itself after `configure()`, when a
+  session starts and when the feed closes. A call made within 30 seconds of
+  any of those can take up to 30 seconds to resolve. The calls in steps 2 and
+  3 run at exactly those moments, so never block a screen on the count.
 - Do not poll. Read the count when a screen appears and when the feed
   closes.
 - `0` is also the answer before a user is identified and when the read fails,
   on both platforms. On Android the call rejects with `REQUEST_ERROR` when the
   SDK cannot start the read at all.
-- On iOS a read can stay pending. When Pulsate answers with an empty
-  response, that read does not settle, and neither do the reads waiting with
-  it. They settle once a later read succeeds. Never block a screen on the
-  count.
+- On iOS an empty response from Pulsate counts as a failed read and resolves
+  `0`.
 - Rarely, on Android a read that arrives exactly as the 30-second window
   closes is settled by the next read instead of its own.
-- On Android `onBadgeUpdate` fires shortly after `configure()` resolves, and
-  for each Pulsate push that arrives while the app runs. It does not fire on
-  session start or when the feed closes, so read the count at those points.
-- On iOS `onBadgeUpdate` fires for a push whose `sender` is `Pulsate` and
-  that carries `content-available` and `aps.badge`. The app must declare the
-  `remote-notification` background mode. Pulsate campaign pushes carry no
-  `content-available`, so iOS relies on the reads above.
+- On Android `onBadgeUpdate` fires shortly after the first `configure()` in
+  the app process resolves, but not again after a JavaScript reload such as a
+  development reload or an over-the-air update. It also fires when a session
+  starts, when the feed closes, with `0` on `logout()` and
+  when `startSession` uses a new alias, and for a Pulsate push that carries
+  a `badge` field. It fires only when the
+  count changed, and after a session start or a feed close it can arrive up
+  to 30 seconds late. The SDK can miss a change of user made with the app in
+  the foreground, for example from one new user straight to another, and
+  then fires no `0`. Call `logout()` before the next user's
+  `startSession()`.
+- On iOS `onBadgeUpdate` fires with `0` after `clearAllNotifications()`,
+  after `logout()`, and when `startSession` uses a new alias. It also fires
+  for a push whose `sender` is `Pulsate` and that carries `content-available`
+  and `aps.badge`. The app must declare the `remote-notification` background
+  mode. Pulsate campaign pushes carry no `content-available`, so iOS relies on
+  the reads above for the count.
 
 ## 4. Decide who may see Pulsate content
 
@@ -151,9 +163,10 @@ Rules for this step:
 - A new install starts authorized.
 - The flag is stored on the device. It reaches Pulsate with the next profile
   update or session start, not with the call itself.
-- On iOS `configure()` marks the user authorized again on every launch.
-  Apply your own answer after `configure()` resolves, every time the app
-  starts. On Android the flag is stored per user and survives a restart.
+- The flag survives a restart on both platforms. On Android it is stored per
+  user. On iOS it is one value for the device, whichever user is signed in,
+  and a `configure()` with an app ID or key different from the last one
+  resets it to authorized.
 - On Android, marking a user unauthorized does not close a feed that is
   already open. The feed closes the next time it comes to the front.
 - On Android a feed `showLastUnauthorizedMessage()` re-opens stays exempt from
@@ -197,13 +210,19 @@ Rules for this step:
   the flag.
 - `action` is present on iOS only. It names what was refused and is meant
   for logs. Do not branch on its value.
-- On iOS the refused item is shown once. A second call shows nothing.
+- On iOS the refused item stays until it has been shown. After that a second
+  call shows nothing.
 - The feed this opens does not fire `onFeedClose`. Only a feed `showFeed()`
   opened does.
 - Pulsate forgets the refused item when the alias changes at session start, on
-  `logout()`, after showing it, and when the app leaves the foreground.
-  `userHasLoggedOut()` does not make it forget. Treat a refused item as
-  available only for the rest of the foreground session.
+  `logout()`, and after showing it. `userHasLoggedOut()` does not make it
+  forget.
+- On iOS the refused item survives the app going to the background and a
+  restart, for up to an hour after the refusal. Only a push the user tapped is
+  held.
+- On Android the refused item is forgotten when the app leaves the
+  foreground. Treat it there as available only for the rest of the foreground
+  session.
 
 ## Verify
 
@@ -228,12 +247,10 @@ Rules for this step:
 | `showFeed()` resolves but nothing appears on iOS | A previous feed was still animating in | Call it once per tap. Disable the button until `onFeedClose` fires |
 | `onFeedClose` never fires | The feed was opened by Pulsate, not by `showFeed()`, or nothing was subscribed when it closed | Subscribe at startup, as in step 2. Expect no event for feeds Pulsate opens |
 | `onFeedClose` fires while the feed is still open on Android | The system recreated the feed screen after a language, font size, dark mode or multi-window change | Treat the event as a hint to refresh, not as proof the feed is gone |
-| The unread count takes up to 30 seconds to resolve | Another read ran within the last 30 seconds | Read on screen appearance and on `onFeedClose` only, as in step 3 |
-| The unread count never resolves on iOS | Pulsate answered a read with an empty response | Read again later. Never block a screen on the count, as in step 3 |
+| The unread count takes up to 30 seconds to resolve | Another read ran within the last 30 seconds. On Android that includes the SDK's own reads after `configure()`, a session start and a feed close | Read on screen appearance and on `onFeedClose` only, as in step 3 |
 | The unread count is always `0` | No session with an alias is running, or the read failed on either platform | Start a session first. Retry after 30 seconds |
 | The feed closes as soon as it opens on Android | The user is marked unauthorized | Call `setUserAuthorized(true)` or `userHasLoggedIn()`, as in step 4 |
-| A user marked unauthorized is authorized again after a restart on iOS | `configure()` authorizes the user on every launch | Apply your own answer after `configure()` resolves, as in step 4 |
-| `showLastUnauthorizedMessage()` shows nothing on iOS | The user was still unauthorized, or the item was already shown once | Call `setUserAuthorized(true)` first, as in step 5 |
+| `showLastUnauthorizedMessage()` shows nothing on iOS | The user was still unauthorized, the item was already shown, or it was refused more than an hour ago | Call `setUserAuthorized(true)` first, as in step 5 |
 | `showLastUnauthorizedMessage()` shows a feed the user was refused before signing out | `userHasLoggedOut()` does not clear the refused item on Android | Call `logout()` when the user's identity should leave the device |
 
 ## How it works
@@ -244,8 +261,9 @@ event follows the feed screen's destruction. On iOS it follows the screen's
 release, which lands a moment after the closing animation.
 
 The unread count is one of Pulsate's heavier requests, so both SDKs allow one
-read every 30 seconds. The bridge groups calls that arrive inside that window
-and answers them all from the next read. That read also sends pending profile
+read every 30 seconds. On Android the SDK's own reads, after `configure()`,
+a session start and a feed close, share that window. The bridge groups calls
+that arrive inside that window and answers them all from the next read. That read also sends pending profile
 and attribute changes first, because they can change the count.
 
 The authorization flag lives on the device. On Android it sits in the SDK's

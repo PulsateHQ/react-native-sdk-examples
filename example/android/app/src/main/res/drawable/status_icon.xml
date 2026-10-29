@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- PUSH-02: the host's status-bar icon for Pulsate notifications. The SDK
      builds every notification with R.drawable.status_icon
-     (PulsateNotification.kt:111), so a host drawable of the same name wins
-     at resource merge time and replaces the SDK's default. Status icons are
-     white on transparent; the system tints them. -->
+     (PulsateNotification.createNotification), so a host drawable of the same
+     name wins at resource merge time and replaces the SDK's default. Status
+     icons are white on transparent; the system tints them. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"

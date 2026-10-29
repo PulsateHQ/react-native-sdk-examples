@@ -161,9 +161,12 @@ Rules for this step:
   monitored, and crossings are still reported to Pulsate with the device's
   location. That lasts until the user logs out or Pulsate sends the device no
   geofences.
-- On Android, turning tracking off and back on in the same run does not
-  restart geofence monitoring. Monitoring resumes after the app restarts.
-  Set the value once per run.
+- On Android, turning tracking off and then back on more than a minute later
+  restarts geofence monitoring in the same run, two to three minutes after
+  the second call. A second call within the minute cancels the
+  first, and monitoring never stops. Exits in between are not reported. When
+  monitoring resumes, `onGeofence` reports an `'enter'` for every geofence the
+  device is inside.
 
 ## 5. Read the last known location
 
@@ -217,8 +220,9 @@ Rules for this step:
 - `transition` is `'enter'` or `'exit'`. The SDK does not register dwell
   times, so `'dwell'` never arrives.
 - Expect more events than Pulsate records. The SDK registers its geofences
-  about two minutes after every app start, and a device already inside one
-  reports an `'enter'` each time.
+  about two minutes after every app start and about three minutes after
+  tracking is switched back on, and a device already inside one reports an
+  `'enter'` each time.
 - The handler never sees geofencing errors the operating system reports.
 - Pulsate registers the nearest fences around the device, not every fence in
   the campaign.
@@ -254,7 +258,7 @@ Rules for this step:
 | `onGeofence` never fires, although location is on | **Location Accuracy** is off, so Google Play services registers no geofence | Turn on **Location Accuracy**, labelled **Google Location Accuracy** on some devices, in the location settings |
 | Location is tracked for a user who never agreed to it | Tracking is on by default | Call `setLocationEnabled(false)` until the user agrees, as in step 4. On iOS the device still monitors the geofences Pulsate sends it, as the rules in step 4 say |
 | Geofence crossings still reach Pulsate after an iOS user opted out | On iOS turning tracking off stops nothing on the device | Expected until the user logs out. See the rules in step 4 |
-| `onGeofence` stopped firing after tracking was switched off and on | Monitoring does not restart in the same run | Restart the app, and set the value once per run, as in step 4 |
+| `onGeofence` stopped firing after tracking was switched off and on | Monitoring resumes two to three minutes after tracking is switched back on | Wait. No app restart is needed. See step 4 |
 | `onGeofence` never fires on iOS | iOS reports crossings straight to Pulsate | Expected. Handle geofences on iOS through the campaign only |
 | A geofence campaign never triggers on iOS for a user already inside the geofence | iOS reports boundary crossings only | The campaign triggers after the user leaves and enters again |
 | Play Console flags background location | The SDK's manifest declares `ACCESS_BACKGROUND_LOCATION` | Complete the declaration, as in step 2, or remove the permissions if the app does not use location |

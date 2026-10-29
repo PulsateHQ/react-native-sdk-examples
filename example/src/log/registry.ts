@@ -23,6 +23,11 @@ export type ListenerRegistryOptions = {
 
 let notifier: ToastNotifier | undefined;
 
+/**
+ * The toast is a glance, the Log entry is the record: an `onError` detail is
+ * the SDK's full retry-limit sentence, longer than a toast holds, so the
+ * transient half shows only its head and the store keeps it whole.
+ */
 const TOAST_MAX_LENGTH = 120;
 
 function toastText(text: string): string {

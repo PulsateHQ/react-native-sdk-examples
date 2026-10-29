@@ -202,9 +202,10 @@ export function FeedScreen() {
 
             On iOS the gate is not "Show feed": nothing here opens the feed yet
             (FEED-01). What produces onUnauthorizedAction there is Pulsate
-            refusing a push campaign, an in-app campaign, a call to action or
-            an action button to an unauthorized user — send a campaign from the
-            dashboard with the user unauthorized, and the Log screen carries
+            refusing a push campaign the user tapped, an in-app campaign, a
+            call to action or an action button to an unauthorized user — send
+            a campaign from the dashboard with the user unauthorized, tap it
+            with the app in the background, and the Log screen carries
             feed.unauthorized with the label that was refused. Then Authorize
             and Show last unauthorized message brings that campaign back. An
             action button is the one refusal that leaves nothing to bring back:
@@ -213,7 +214,7 @@ export function FeedScreen() {
         <Row label="Platform" value="Both platforms" />
         <Row
           label="On iOS"
-          value="Restarting the app authorizes the user again, so an unauthorized state does not survive a relaunch. The feed itself is not gated on iOS; what is withheld is push campaigns, in-app campaigns, calls to action and action buttons. Press Authorize before Show last unauthorized message, or the replay is refused. The replay shows a refused message once, so pressing it a second time shows nothing."
+          value="The authorization survives a restart of the app, as one value for the device whichever user is signed in. Configuring with a different app ID or key from Settings clears it, so the user is authorized again. The feed itself is not gated on iOS; what is withheld is push campaigns, in-app campaigns, calls to action and action buttons. Press Authorize before Show last unauthorized message, or the replay is refused. Once the replay has shown the refused message, pressing it again shows nothing. iOS keeps a refused message for up to an hour, also across a restart."
         />
         <Button
           title="Authorize"
@@ -253,7 +254,7 @@ export function FeedScreen() {
         />
         <Row
           label="onUnauthorizedAction"
-          value="On Android it fires whenever the feed comes to the front for an unauthorized user, with no payload (an empty action is expected), and feed.close follows it. On iOS it fires when Pulsate refuses a push campaign, an in-app campaign, a call to action or an action button, naming what was refused, and no feed.close follows."
+          value="On Android it fires whenever the feed comes to the front for an unauthorized user, with no payload (an empty action is expected), and feed.close follows it. On iOS it fires when Pulsate refuses a push campaign the user tapped, an in-app campaign, a call to action or an action button, naming what was refused, and no feed.close follows."
         />
         <Row
           label="Rotation"

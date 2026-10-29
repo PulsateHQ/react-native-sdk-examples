@@ -157,13 +157,15 @@ Rules for this step:
 - On Android `getPrivacy()` rejects with `REQUEST_ERROR` when the SDK's local
   store cannot be read.
 - Once Pulsate has stored `'unsubscribed'`, it refuses to start a session for
-  that user. After a restart, `startSession()` rejects with `REQUEST_ERROR` on
-  Android and resolves on iOS. On iOS, `setPrivacy('subscribed')` for the
-  same alias lifts the refusal. On Android it does so only on the install
-  that sent `'unsubscribed'`, called after the rejected `startSession()` in
-  the same process. After a reinstall or on another device the call sends
-  nothing, because `'subscribed'` equals the level stored there, and the user
-  stays refused.
+  that user. `startSession()` rejects with `REQUEST_ERROR` on both platforms
+  until the user is subscribed again.
+- To lift the refusal, call `setPrivacy('subscribed')` after a rejected
+  `startSession()` for that user, then start the session again. On iOS this
+  works on any install. If another level was set in the last minute, iOS
+  sends this one when that minute ends, so start the session after it. On
+  Android it works only on the install that sent `'unsubscribed'`. After a
+  reinstall or on another device the call sends nothing, because
+  `'subscribed'` equals the level stored there, and the user stays refused.
 
 ## Verify
 
@@ -188,7 +190,7 @@ Rules for this step:
 | An emptied field keeps its old value in the dashboard | Blank fields are left out of the update | Send a replacement value instead of an empty string |
 | `updateAge` rejects with `VALIDATION_ERROR` | The age is not a whole number, or is outside the safe integer range | Round the age to whole years, as in step 2 |
 | `getPrivacy()` answers `'subscribed'` after the user unsubscribed on Android | The level was set while no alias was active | Call `setPrivacy` after `startSession()` resolves, as in step 1 |
-| `startSession()` rejects with `REQUEST_ERROR` on Android for a user who unsubscribed earlier | Pulsate refuses a session for an unsubscribed user; iOS resolves in the same state | On the install that unsubscribed, call `setPrivacy('subscribed')` after the rejected `startSession()`, in the same process, then start the session again. After a reinstall or on another device the call sends nothing and the user stays refused |
+| `startSession()` rejects with `REQUEST_ERROR` for a user who unsubscribed earlier | Pulsate refuses a session for an unsubscribed user | Call `setPrivacy('subscribed')` after the rejected `startSession()`, then start the session again. On iOS, if another level was set in the last minute, wait for that minute to end. On Android this works only on the install that unsubscribed; after a reinstall or on another device the call sends nothing and the user stays refused |
 | The dashboard still shows the old privacy level | The level is held for up to sixty seconds | Wait a minute. On iOS a failed send is retried at the next session start |
 | A new user on an iOS device inherits the previous user's level | iOS keeps the level for the device | Call `setPrivacy` after each sign-in, as in step 4 |
 

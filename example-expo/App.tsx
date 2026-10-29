@@ -197,12 +197,24 @@ export default function App() {
                 { gap: spacing.xs, marginBottom: spacing.xs },
               ]}
             >
-              <Text style={[type.caption, styles.line, { color: colors.text }]}>
+              <Text
+                style={[
+                  type.caption,
+                  styles.line,
+                  styles.name,
+                  { color: colors.text },
+                ]}
+              >
                 {line.name}
               </Text>
               {line.detail === '' ? null : (
                 <Text
-                  style={[type.caption, styles.line, { color: colors.text }]}
+                  style={[
+                    type.caption,
+                    styles.line,
+                    styles.detail,
+                    { color: colors.text },
+                  ]}
                 >
                   {line.detail}
                 </Text>
@@ -221,7 +233,10 @@ const styles = StyleSheet.create({
   log: { flex: 1 },
   row: { flexDirection: 'row' },
   line: {
-    flexShrink: 1,
     fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }),
   },
+  // The name keeps its full width so it never breaks mid-word; the detail
+  // takes the rest and wraps.
+  name: { flexShrink: 0 },
+  detail: { flex: 1 },
 });

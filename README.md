@@ -33,6 +33,7 @@ inside the package as `node_modules/@pulsatehq/react-native-sdk/docs`:
 | `attributes-and-events.md` | Custom events, attributes and counters |
 | `feed.md` | The feed, its unread count, and who may see Pulsate content |
 | `location.md` | Location permissions, tracking and geofences |
+| `data-collection.md` | What the SDK sends to Pulsate, for the App Store and Google Play privacy forms |
 | `handling-events.md` | Subscribing to the events the SDK raises |
 | `errors.md` | What each rejection means |
 | `api/` | Generated API reference |
@@ -41,10 +42,10 @@ inside the package as `node_modules/@pulsatehq/react-native-sdk/docs`:
 
 | | Version |
 |---|---|
-| Node | 24.13 or later |
+| Node | 22.13 minimum; 24 LTS recommended (tested with 24.13) |
 | React Native (bare example) | 0.85 |
 | Expo (Expo example) | SDK 54 |
-| Xcode | 16 or later, with CocoaPods |
+| Xcode | 16 or later, with CocoaPods; built and tested with 26 |
 | cmake | Only if the Hermes prebuilt cannot be downloaded |
 | Android | JDK 17, compile SDK 36, minimum SDK 28 |
 

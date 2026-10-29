@@ -19,9 +19,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
     if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
-      window = UIWindow(frame: UIScreen.main.bounds)
-      window?.rootViewController = UIViewController()
-      window?.makeKeyAndVisible()
       return true
     }
 
@@ -42,13 +39,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     // before any push SDK's own setup, is what keeps the chaining in one place.
     UNUserNotificationCenter.current().delegate = self
 
-    window = UIWindow(frame: UIScreen.main.bounds)
-
-    factory.startReactNative(
-      withModuleName: "ReactNativeSdkExample",
-      in: window,
-      launchOptions: launchOptions
-    )
+    // iOS 27 SDK: the window is created by SceneDelegate, not here.
 
     return true
   }
@@ -168,5 +159,57 @@ class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
     #else
       Bundle.main.url(forResource: "main", withExtension: "jsbundle")
     #endif
+  }
+}
+
+// iOS 27 SDK requires the UIScene lifecycle. Push callbacks stay on the
+// AppDelegate / UNUserNotificationCenter; only the window and URL opens move.
+class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+  var window: UIWindow?
+
+  func scene(
+    _ scene: UIScene,
+    willConnectTo session: UISceneSession,
+    options connectionOptions: UIScene.ConnectionOptions
+  ) {
+    guard let windowScene = scene as? UIWindowScene else { return }
+    let window = UIWindow(windowScene: windowScene)
+    self.window = window
+    let appDelegate = UIApplication.shared.delegate as? AppDelegate
+    appDelegate?.window = window
+    if let factory = appDelegate?.reactNativeFactory {
+      // A launch URL reaches JS only through these launch options:
+      // `Linking.getInitialURL()` reads nothing else, and an RCTLinkingManager
+      // call here is lost because the Linking module is not listening yet.
+      // Pulsate is not offered the URL either: before `configure()` it
+      // answers false.
+      var launchOptions: [UIApplication.LaunchOptionsKey: Any] = [:]
+      if let url = connectionOptions.urlContexts.first?.url {
+        launchOptions[.url] = url
+      }
+      factory.startReactNative(
+        withModuleName: "ReactNativeSdkExample", in: window, launchOptions: launchOptions)
+    } else {
+      window.rootViewController = UIViewController()
+      window.makeKeyAndVisible()
+    }
+  }
+
+  // Empty options: Pulsate and RCTLinkingManager read only the URL.
+  func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+    for context in URLContexts {
+      if PulsatePush.application(open: context.url, options: [:]) {
+        continue
+      }
+      RCTLinkingManager.application(UIApplication.shared, open: context.url, options: [:])
+    }
+  }
+
+  func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
+    if PulsatePush.application(continue: userActivity, restorationHandler: { _ in }) {
+      return
+    }
+    RCTLinkingManager.application(
+      UIApplication.shared, continue: userActivity, restorationHandler: { _ in })
   }
 }

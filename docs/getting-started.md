@@ -10,6 +10,7 @@ next page.
 - React Native 0.76 or newer with the New Architecture enabled. The SDK is a
   TurboModule and does not support the old architecture.
 - iOS 15.1 or newer as the app's deployment target.
+- Xcode 26.2 or newer to build for iOS.
 - Android `minSdkVersion` 28 or higher.
 - A Pulsate app and its **SDK App ID** and **SDK App Key**, from the
   dashboard under **Settings → App Settings → SDK Connect**. Both are
@@ -29,9 +30,6 @@ Or, with Yarn:
 yarn add @pulsatehq/react-native-sdk
 ```
 
-> Until the first stable release, published versions are previews on the
-> `next` dist-tag: append `@next` to the package name when installing.
-
 Then install the iOS pods:
 
 ```sh
@@ -42,9 +40,21 @@ On Expo, install with `npx expo install @pulsatehq/react-native-sdk` and
 continue with [Set up the Expo config plugin](expo.md), which adds the
 plugin and runs prebuild.
 
-The package pulls in the native Pulsate SDKs itself: `PULPulsate` through
-CocoaPods and `com.pulsatehq.sdk:PulsateSdk` from Maven Central. Both are
-public. Nothing needs adding to your Podfile or Gradle files.
+The package brings the native Pulsate SDKs itself. The iOS SDK,
+`PULPulsate`, ships inside the package, and `pod install` links it. The
+Android SDK, `com.pulsatehq.sdk:PulsateSdk`, comes from Maven Central. If
+your `Podfile` already declares `pod 'PULPulsate'`, remove that line, or
+`pod install` fails. Nothing needs adding to your Podfile or Gradle files, with
+one exception: the React Native template starts at `minSdkVersion 24`, and the
+Android SDK requires 28. Set it in the `ext` block of your app's
+`android/build.gradle` (not `android/app/build.gradle`) before the first
+Android build, or the manifest merger stops with
+`uses-sdk:minSdkVersion 24 cannot be smaller than version 28`.
+
+> [!NOTE]
+> The iOS SDK inside the package is covered by the package's `LICENSE`,
+> which applies in place of the iOS SDK's own licence file
+> (`ios/Frameworks/PULPulsate-LICENSE.txt` of the installed package).
 
 ## 2. Configure the SDK at startup
 
@@ -78,7 +88,8 @@ Rules for this step:
   rejects with `CONFIGURATION_ERROR` when they are present.
 - `PulsateConfig` has two iOS-only options, `iosPulsateAppDelegate` and
   `iosPulsateNotificationDelegate`. Leave them at their default, `false`.
-  The iOS push guide explains what they do.
+  The iOS push guide explains what they do. `iosPulsateAppDelegate` is
+  deprecated.
 
 > [!IMPORTANT]
 > Use a Pulsate app in **Development Mode** for debug builds and one in
@@ -108,12 +119,14 @@ Rules for this step:
 - Call it with the app in the foreground. In the background the SDK retries
   and then fails: after about 12 seconds on iOS, about 30 seconds on Android.
 - Starting a session for a different alias replaces the previous user and
-  clears every notification in the tray, including notifications other
-  libraries posted.
-- What a resolved promise means differs by platform. On Android the backend
-  accepted the session; invalid credentials reject with `REQUEST_ERROR`. On
-  iOS a resolve means the request was sent. Confirm the user in the dashboard,
-  as in **Verify**.
+  clears notifications from the tray. On iOS that is every notification,
+  including ones other libraries posted and local notifications your app has
+  scheduled but not yet delivered. On Android it is Pulsate's only.
+- On Android a switch straight from one user to another can be missed, and
+  then the previous user's notifications and unread count stay. Call
+  `logout()` before you start a session for a different user.
+- A resolved promise means Pulsate accepted the session. Invalid credentials
+  reject with `REQUEST_ERROR`.
 
 ## 4. Signal sign-in and sign-out
 
@@ -231,8 +244,8 @@ other events the SDK raises.
 | `configure()` rejects with `CONFIGURATION_ERROR` on Android and the manifest has no Pulsate meta-data | The SDK's `PulsateProvider` content provider was removed from the merged manifest | Remove any manifest entry that removes `PulsateProvider`. See the warning in step 3 of [Set up push notifications on Android](android-push-setup.md) |
 | Any call rejects with `CONFIGURATION_ERROR` | `configure()` has not resolved yet | Step 2. Await `configure()` before the first Pulsate call |
 | `startSession()` rejects with `VALIDATION_ERROR` | The alias is empty or whitespace | Step 3. Pass a non-blank alias |
-| `startSession()` rejects with `REQUEST_ERROR` on Android | The backend refused the session, usually invalid credentials | Step 3. Check the keys and the app's mode in **App Manager** |
-| `startSession()` resolves on iOS but the user never appears in the dashboard | On iOS the SDK does not inspect the HTTP status, so a refused request still resolves | Step 3. Check the keys and the app's mode in **App Manager** |
+| `startSession()` rejects with `REQUEST_ERROR` | The backend refused the session, usually invalid credentials | Step 3. Check the keys and the app's mode in **App Manager** |
+| `pod install` fails with `frameworks with conflicting names: pulpulsate.xcframework` | The `Podfile` declares `pod 'PULPulsate'`, a second copy of the iOS SDK the package already ships | Step 1. Remove the line and run `pod install` again |
 | The build fails on Android with a manifest merger error mentioning `minSdkVersion` | The app's `minSdkVersion` is below 28 | See **Requirements**. Set `minSdkVersion = 28` in the `ext` block of your app's `android/build.gradle` |
 
 ## How it works
@@ -260,3 +273,4 @@ want to route yourself.
 - [Control when in-app messages appear](in-app-messages.md)
 - [API reference](api/README.md)
 - [Errors](errors.md)
+- [Upgrade the SDK](upgrading.md)

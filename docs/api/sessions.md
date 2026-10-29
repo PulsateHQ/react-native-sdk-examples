@@ -64,8 +64,7 @@ Starts a session for `alias`, the user every later call is attributed to.
 
 Call it with the app in the foreground; in the background the SDK retries
 a few times and then fails. Starting a session for a different alias
-replaces the previous user and clears every notification in the tray,
-including notifications other libraries posted.
+replaces the previous user and clears notifications.
 
 #### Parameters
 
@@ -73,16 +72,13 @@ including notifications other libraries posted.
 | ------ | ------ | ------ |
 | `alias` | `string` | A stable identifier for the user, such as a customer ID. Crosses to the SDK verbatim. Must not be blank. |
 | `options?` | \{ `debug?`: `boolean`; \} | Optional session settings. |
-| `options.debug?` | `boolean` | Enables the SDK's remote debug logging on iOS. The flag crosses to the SDK unchanged. `true` is not supported on iOS; leave it `false`. The Android bridge takes no debug flag, so the value stays on the JavaScript side there. |
+| `options.debug?` | `boolean` | Enables the SDK's debug logging on iOS. Accepted on both platforms; it has an effect on iOS only. On iOS the flag crosses to the SDK unchanged, and the debug logs stay on the device: they are never uploaded. On iOS, shaking the device then opens the SDK's debug screen; use it in development builds only. The Android bridge takes no debug flag, so the value stays on the JavaScript side there. |
 
 #### Returns
 
 `Promise`\<`void`\>
 
-What a resolve means differs by platform. On Android the backend
-accepted the session. On iOS the request was sent, and the SDK does not
-inspect the HTTP status. Invalid credentials resolve there and surface
-later as a missing user in the dashboard.
+Resolves once the backend has accepted the session.
 
 #### Throws
 
@@ -90,12 +86,24 @@ later as a missing user in the dashboard.
 - `VALIDATION_ERROR` when `alias` is empty or whitespace. Raised before the
   native SDK is reached.
 - `CONFIGURATION_ERROR` before [configure](#configure) has resolved.
-- `REQUEST_ERROR` when the SDK reports the session failed. On Android that
-  includes a backend refusal, invalid credentials included. On iOS it is a
-  reported failure only. The SDK does not inspect the HTTP status there.
+- `REQUEST_ERROR` when the session failed, a backend refusal such as
+  invalid credentials included.
 - `REQUEST_ERROR` on iOS when a later `startSession` supersedes this one
   before the SDK answers. The SDK holds one session listener, so only the
   newest call can resolve.
+
+#### Remarks
+
+- On Android a different alias clears Pulsate's notifications only, once
+  the session has started. A switch straight from one user to another can
+  be missed, so the previous user's notifications and unread count stay.
+  Call [logout](#logout) before starting a session for a different user.
+- On iOS a different alias clears every notification of the app, including
+  other libraries' and local notifications scheduled but not yet delivered.
+  This happens before the request, so also when `startSession` rejects with
+  `REQUEST_ERROR`.
+- On iOS the first session after install, or after a `logout()` that ended
+  the session, counts as a different alias.
 
 #### Example
 
@@ -113,22 +121,23 @@ function logout(): Promise<void>;
 
 Ends the session for the user the SDK holds.
 
-The device is logged out locally whichever way the promise settles. The
-stored alias is cleared, and on Android in-app and notification state goes
-with it. Call it once per sign-out.
+The stored alias is cleared, and on Android in-app state goes with it.
+Notifications are cleared on both platforms: on Android the Pulsate
+notifications, once a session has started; on iOS every notification of the
+app, including local notifications scheduled but not yet delivered. Call it
+once per sign-out.
 
 #### Returns
 
 `Promise`\<`void`\>
 
-As with [startSession](#startsession): an Android resolve means the
-backend accepted the logout, an iOS resolve means the request was sent.
+Resolves once the backend has accepted the logout.
 
 #### Throws
 
 [Errors.PulsateError](errors.md#pulsateerror)
 - `CONFIGURATION_ERROR` before [configure](#configure) has resolved.
-- `REQUEST_ERROR` when the logout request fails.
+- `REQUEST_ERROR` when the logout fails at the backend.
 
 #### Remarks
 
@@ -137,6 +146,12 @@ backend accepted the logout, an iOS resolve means the request was sent.
 - On Android a rejection does not mean the device is still signed in. The
   logout proceeds after the failure the rejection reports, and the local
   state is cleared either way.
+- On iOS a rejection can mean the device is still signed in. The SDK first
+  ends the session with the backend. When that request fails, the logout
+  stops there and the stored alias is kept, so call `logout()` again later.
+  The notifications are already cleared by then, and `onBadgeUpdate` has
+  fired `0`. When only the logout request itself fails, the local state is
+  cleared.
 
 #### Example
 
@@ -261,11 +276,11 @@ has other pending user data. A later failure is not reported.
 
 On iOS the call goes through a thirty-second debounce. The first call in a
 window runs at once. A later call inside the open window settles at the end
-of the window, and only the last one queued there runs. The others stay
-pending forever. The SDK's own user updates share the same window, such as
-those after a location update or a geofence crossing. One of them can
-replace a queued call and leave its promise pending too. Do not await this
-promise where the user is waiting.
+of the window, when the sync the window sends at its end finishes. Every
+call queued in the window settles with that sync's result. The SDK's own user
+updates share the same window, such as those after a location update or a
+geofence crossing. Do not await this promise where the user is waiting: it
+can take thirty seconds.
 
 #### Example
 
@@ -285,5 +300,5 @@ Credentials and the iOS delegate ownership options passed to [configure](#config
 | ------ | ------ | ------ | ------ |
 | <a id="property-appid"></a> `appId` | `string` | `undefined` | The SDK App ID from the Pulsate dashboard. Exactly 64 characters. |
 | <a id="property-appkey"></a> `appKey` | `string` | `undefined` | The SDK App Key from the Pulsate dashboard. Exactly 64 characters. |
-| <a id="property-iospulsateappdelegate"></a> `iosPulsateAppDelegate?` | `boolean` | `false` | iOS only. Leave at the default, `false`: your app keeps its own `AppDelegate` and forwards the push callbacks to `PulsatePush`, as the iOS push guide shows. With `true` the SDK takes over the `AppDelegate` and forwards to yours itself; your app must then forward nothing, or the two forward to each other in a loop. Ignored on Android. |
-| <a id="property-iospulsatenotificationdelegate"></a> `iosPulsateNotificationDelegate?` | `boolean` | `false` | iOS only. The same contract as [PulsateConfig.iosPulsateAppDelegate](#property-iospulsateappdelegate), for the `UNUserNotificationCenter` delegate. With `true` the SDK owns the delegate and notifications from other senders are never presented. |
+| <a id="property-iospulsateappdelegate"></a> ~~`iosPulsateAppDelegate?`~~ | `boolean` | `false` | iOS only. Leave at the default, `false`: your app keeps its own `AppDelegate` and forwards the push callbacks to `PulsatePush`, as the iOS push guide shows. With `true` the SDK takes over the `AppDelegate` and forwards to yours itself; your app must then forward nothing, or the two forward to each other in a loop. Ignored on Android. **Deprecated** The Pulsate iOS SDK deprecates acting as your `AppDelegate` and will remove it in a future major release, together with this option. Leave it unset. |
+| <a id="property-iospulsatenotificationdelegate"></a> `iosPulsateNotificationDelegate?` | `boolean` | `false` | iOS only. Leave at the default, `false`: your app keeps its own `UNUserNotificationCenter` delegate and forwards its callbacks to `PulsatePush`, as the iOS push guide shows. With `true` the SDK takes over the delegate and forwards to yours itself; your app must then forward nothing there, or the two forward to each other in a loop. Notifications from other senders are then never presented. Ignored on Android. |

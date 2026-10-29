@@ -47,42 +47,61 @@ did not show, for example one that arrived while
 ["In-app notifications".setInAppEnabled](in-app-notifications.md#setinappenabled) was `false`. It arrives up to
 about 85 seconds after the message arrived, and only while the app stays in
 the foreground. The error's `type` is `"INAPP_ERROR"` and its `message` is
-the SDK's own text, which can include the user's profile fields. Treat it as
-a debug string for developers, never as text to show a user or to send to a
-third-party logger unredacted.
+the SDK's own text: why the message was not shown, and the campaign's ID.
+Treat it as a debug string for developers, never as text to show a user.
 
 `onBadgeUpdate` is the unread count of the user's feed, as the SDK reports
 it, forwarded unchanged. There is no getter behind it. `getFeedUnreadCount()`
 is the one count getter, and the two can disagree for a while: the getter is
-debounced 30 s natively, the event is not. On Android it has two causes and
-no others. The first is once shortly after `configure()` resolves, when the
-SDK fetches the feed's unread total on registering the bridge's listener.
-That fetch reports `0` on a fresh install with no alias yet. It reports `0`
-again when that request fails, so a first `0` says nothing about the inbox.
-The second is once per Pulsate push that arrives while the app process is
-running, with the count the push carries. It does not fire on session start
-or when the feed closes. A host that shows a badge should also read
-`getFeedUnreadCount()` at those points. Not fired for a push that starts the
-process from cold: the listener is registered by `configure()`, which runs
-after JavaScript starts. Dropped, not queued, while nothing is subscribed.
-The SDK holds a single badge listener. A brownfield host that also calls
-`setBadgeUpdateListener` natively replaces the bridge's, and this event then
-goes quiet with no error. On iOS it has one live cause. The SDK acts on a
+rate-limited natively, the event is not. Dropped, not queued, while nothing
+is subscribed, on both platforms. That includes a count that changes while
+JavaScript reloads.
+
+On Android it fires at these points, and only when the count differs from
+the last one reported. Once shortly after the first `configure()` in the app
+process resolves, from a read of the feed's unread total: `0` on a fresh
+install with no user identified yet. It does not fire again after a
+JavaScript reload in the same process, such as a development reload, an
+expo-updates `reloadAsync()` or a CodePush restart. Read
+[Feed.getFeedUnreadCount](feed.md#getfeedunreadcount) when a screen appears, which can take up to
+30 seconds to resolve. When a session starts, with the user's count, and with `0`
+first when the user changed. The SDK can miss a change of user made with the
+app in the foreground, for example from one new user straight to another,
+and then fires no `0`; call `logout()` before the next user's
+`startSession()`. A `startSession()` that rejects fires nothing,
+even for a different user, so the previous user's count stays until the
+next trigger. When the user leaves the feed. With `0` on `logout()`. For a
+Pulsate push that arrives while the app process is running and carries a
+`badge` field, with that number; a push without one fires nothing. Every
+read of the unread total reports `0` when the request fails, so a `0` after
+`configure()`, a session start or leaving the feed says nothing about the
+inbox. The counts after a session start and after leaving the feed share
+the 30-second limit of `getFeedUnreadCount()`, so they can arrive up to 30
+seconds late. Not fired for a push that starts the process from cold:
+the listener is registered by `configure()`, which runs after JavaScript
+starts. The SDK holds a single listener. A brownfield host that registers
+its own unread-count listener natively replaces the bridge's, and this event
+then goes quiet with no error.
+
+On iOS it fires `0` on `clearAllNotifications()`, on `logout()` and on a
+`startSession()` for a different user than the last one. That includes the
+first `startSession()` after install or after `logout()`, even for the same
+user. Every such call fires it again, even when the count is already `0`.
+Each of those calls also clears the app icon badge. The other cause is a
 push whose `sender` is `Pulsate` that reaches
 `application(_:didReceiveRemoteNotification:fetchCompletionHandler:)`. iOS
 routes a push there when it carries `content-available` and the app declares
 the `remote-notification` background mode. When that push also carries
-`aps.badge`, the SDK reports that number about 0.5 s later. Nothing fires at
-`configure()`, because registering the SDK's badge delegate fetches nothing.
-Nothing fires for a push presented in the foreground, because that path hands
-the badge to iOS and never reaches the SDK's badge timer. Nothing fires on
-session start or feed close either. A Pulsate campaign push carries `badge`
-and `mutable-content` but no `content-available`, so a campaign push does not
-reach that path. The SDK holds one weak `badgeDelegate`: a brownfield host
-that sets its own after `configure()` replaces the bridge's, with no error
-reported. With the bridge registered the SDK stops writing the app icon badge
-itself. iOS applies `aps.badge` on delivery regardless, so the icon still
-follows the push. A host that renders the count elsewhere reads it from here.
+`aps.badge`, the SDK reports that number about 0.5 s later. A Pulsate
+campaign push carries `badge` and `mutable-content` but no
+`content-available`, so a campaign push does not reach that path. Nothing
+fires at `configure()`, for a push presented in the foreground, when a
+session starts for the same user, or when the feed closes. A host that shows
+a badge should read `getFeedUnreadCount()` at those points. The SDK holds one
+weak `badgeDelegate`: a brownfield host that sets its own after
+`configure()` replaces the bridge's, with no error reported. iOS applies
+`aps.badge` to the app icon on delivery, so the icon follows the push. A host
+that renders the count elsewhere reads it from here.
 
 `onFeedClose` fires when the Pulsate feed closes, with no payload. It reports
 only a feed [Feed.showFeed](feed.md#showfeed) opened. A feed Pulsate opened by itself is
@@ -120,9 +139,10 @@ again or open it yourself. The one feed it never fires for there is the one
 the check for as long as it is on screen. Revoking authorization while it is
 open closes nothing. Dropped, not queued, while nothing is subscribed. On iOS
 it is the refusal itself that fires the event. The refusal can be a push
-campaign, an in-app campaign, a call to action, or an action button Pulsate
-declined to act on. No `onFeedClose` follows, and it fires whether or not
-anything opened the feed. Not every one of those leaves something
+campaign the user tapped, an in-app campaign, a call to action, or an action
+button Pulsate declined to act on. A push that arrives while the app is in
+front is not refused and fires nothing. No `onFeedClose` follows, and it
+fires whether or not anything opened the feed. Not every one of those leaves something
 [Feed.showLastUnauthorizedMessage](feed.md#showlastunauthorizedmessage) can bring back: an action button
 leaves nothing. The payload differs to match: iOS carries an `action` label
 naming what was refused, Android carries nothing. It is a diagnostic label,
@@ -170,9 +190,9 @@ bridge, so that one path never reaches a handler.
 Pulsate monitors. It fires on Android only; subscribing on iOS is harmless.
 The iOS SDK reports its own crossings straight to Pulsate, so there is
 nothing for a handler to receive. Three things have to hold before it can
-fire on Android. [Location.setLocationEnabled](location.md#setlocationenabled) is `true` and has not
-been switched off in this process. Switching it back on restarts nothing
-until the app restarts. The app holds background location permission. With
+fire on Android. [Location.setLocationEnabled](location.md#setlocationenabled) is `true`. After it is
+switched off for more than a minute and back on, monitoring resumes two to
+three minutes later. The app holds background location permission. With
 foreground permission alone the SDK downloads the geofences and monitors
 none, with no error reported. The campaign's geofences have reached the
 device. One crossing is one event naming every geofence it triggered, so
@@ -183,7 +203,8 @@ none. The handler runs before the SDK's own de-duplication, so it sees every
 crossing the operating system delivers. That includes the burst of `enter`
 events the system replays for every geofence the device is already inside
 whenever the SDK registers them again. That happens about two minutes after
-every app start. An app launched inside a geofence therefore reports an
+every app start, and about three minutes after tracking is switched back
+on. An app launched inside a geofence therefore reports an
 `enter` on each launch. Expect more events than Pulsate records. The
 `transition` type includes `dwell`, but the Android SDK registers entries and
 exits only, so `dwell` never arrives. Geofencing errors the operating system

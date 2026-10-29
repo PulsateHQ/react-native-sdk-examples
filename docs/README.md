@@ -37,6 +37,8 @@ type.
   stop collection.
 - [Subscribe to SDK events](handling-events.md): when to subscribe, removing
   handlers, and which event fires on which platform.
+- [Upgrade the SDK](upgrading.md): what to change in your app, and what
+  behaves differently, for each new version.
 
 ## Reference
 
@@ -51,6 +53,7 @@ the source, so it is exact for the installed version.
 - [Push notifications](api/push-notifications.md)
 - [Location](api/location.md)
 - [Events](api/events.md)
+- [Crash reporting](api/crash-reporting.md)
 - [Errors](api/errors.md)
 
 [Errors](errors.md) describes the `PulsateError` type and the rejection codes.
@@ -58,6 +61,8 @@ the source, so it is exact for the installed version.
 ## Versions
 
 The [changelog](../CHANGELOG.md) lists what each release adds.
+[Upgrade the SDK](upgrading.md) lists what to change in your app for each
+upgrade.
 
 These guides describe the shipped SDK versions the package pins and
 supersede the native iOS and Android pages on docs.pulsatehq.com for React

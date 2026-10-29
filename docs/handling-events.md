@@ -78,8 +78,8 @@ more than once.
 |---|---|---|---|
 | `onLink` | `url: string` | A push tap, a push action button, an in-app or feed-card call to action, or a link tapped in the feed | The same sources, with two exceptions: a push call to action whose destination type is `url` opens Safari, and a feed link whose destination uses the `pulsate://` scheme is consumed by the feed and never reaches `onLink`. Give feed cards an `https://` destination or your app's own scheme |
 | `onFeedClose` | none | A feed `showFeed()` opened has closed | Same |
-| `onUnauthorizedAction` | `{ action?: string }` | The feed came to the front for an unauthorized user. No `action` | Pulsate refused a campaign, an in-app message, a call to action or an action button. `action` names which |
-| `onBadgeUpdate` | `count: number` | Shortly after `configure()`, and for each Pulsate push while the app runs | Fires for a push whose `sender` is `Pulsate`, that carries `content-available` and `aps.badge`, in an app that declares the `remote-notification` background mode. Pulsate campaign pushes carry no `content-available` |
+| `onUnauthorizedAction` | `{ action?: string }` | The feed came to the front for an unauthorized user. No `action` | Pulsate refused a push the user tapped, an in-app message, a call to action or an action button. `action` names which. A push that arrives while the app is in front fires nothing |
+| `onBadgeUpdate` | `count: number` | Shortly after the first `configure()` in the app process, not after a JavaScript reload. When a session starts, when the feed closes, with `0` on `logout()` and when `startSession` uses a new alias, and for a Pulsate push that carries a `badge` field. Only when the count changed. The SDK can miss a change of user made with the app in the foreground, so call `logout()` before the next user's `startSession()` | With `0` after `clearAllNotifications()`, after `logout()`, and when `startSession` uses a new alias. Also for a push whose `sender` is `Pulsate`, that carries `content-available` and `aps.badge`, in an app that declares the `remote-notification` background mode. Pulsate campaign pushes carry no `content-available` |
 | `onGeofence` | `GeofenceEvent` | The device entered or left a Pulsate geofence | Never fires |
 | `onError` | `PulsateError` | The SDK's retries for an in-app message are exhausted | Never fires |
 
@@ -98,7 +98,16 @@ Rules for this step:
 - `onUnauthorizedAction`: act on the event, not on `action`. The label is
   for logs.
 - On Android, `onBadgeUpdate`: a first `0` after `configure()` says nothing
-  about the inbox. Read `getFeedUnreadCount()` when a screen appears as well.
+  about the inbox, and after a JavaScript reload, such as a development reload
+  or an over-the-air update, nothing fires until the count changes. Read
+  `getFeedUnreadCount()` when a screen appears as well.
+- On Android, `onBadgeUpdate`: the count after a session start or a feed
+  close can arrive up to 30 seconds late. A Pulsate push without a `badge`
+  field fires nothing.
+- On iOS, `onBadgeUpdate`: a new alias is one that differs from the alias of
+  the last session. The first `startSession` after installing the app or
+  after `logout()` counts as a new alias, unless that `logout()` failed
+  before the session ended.
 - `onGeofence`: needs background location permission on Android. See
   [Set up location and geofences](location.md).
 
@@ -106,7 +115,7 @@ Rules for this step:
 
 `onError` is a diagnostic for developers. Its `type` is an opaque string,
 `"INAPP_ERROR"` for the errors the SDK reports. Its `message` is the SDK's
-own text, which can include the user's profile fields.
+own text: why the message was not shown, and the campaign's ID.
 
 ```ts
 // index.js
@@ -130,8 +139,9 @@ addListener('onError', (error) => {
 2. Open the feed with `showFeed()` and close it. `onFeedClose` fires once.
 3. On Android, call `setUserAuthorized(false)` and open the feed.
    `onUnauthorizedAction` fires, then `onFeedClose`.
-4. On Android, send a Pulsate push while the app runs. `onBadgeUpdate` fires
-   with the unread count.
+4. On Android, call `logout()`, then `startSession(alias)` for a user with
+   unread feed cards. `onBadgeUpdate` fires with the unread count within 30
+   seconds. Call `logout()` again, and it fires with `0`.
 5. Kill the app, tap a Pulsate push with a deep link, and let the app start.
    `onLink` fires once your startup code subscribes.
 
@@ -141,6 +151,7 @@ addListener('onError', (error) => {
 |---|---|---|
 | A handler never fires | The event fired before the subscription and was dropped | Subscribe at module scope, as in step 1 |
 | `onGeofence` or `onError` never fires on iOS | These events are Android-only, as the table in step 3 shows | Handle the iOS case without them |
+| `onBadgeUpdate` does not fire for a Pulsate push on Android | The push carries no `badge` field, or the count did not change | Read `getFeedUnreadCount()` when a screen appears and when the feed closes |
 | `onBadgeUpdate` never fires on iOS for a Pulsate campaign | A campaign push carries no `content-available`, which is what the iOS badge path needs | Read `getFeedUnreadCount()` when a screen appears |
 | A handler fires twice for one event | `addListener` ran twice without a `remove()`, for example on a component that mounted twice | Return `subscription.remove` from the effect, as in step 2 |
 | A handler still fires after its screen closed | The subscription was never removed | Call `remove()` on unmount, as in step 2 |

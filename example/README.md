@@ -10,8 +10,11 @@ repository.
 
 ## Requirements
 
-Node 24.13 or later, React Native 0.85, JDK 17 for Android, and Xcode 16 with
-CocoaPods for iOS. iOS builds need a Mac.
+Node 22.13 at minimum (the oldest release React Native 0.85 accepts on a
+supported LTS line); Node 24 LTS recommended, and 24.13 is what this example is
+built and tested with. React Native 0.85, JDK 17 for Android, and Xcode 16 or
+later with CocoaPods for iOS (built and tested with Xcode 26). iOS builds need
+a Mac.
 
 If `pod install` fails with `Unable to locate the executable cmake`, React
 Native could not download its prebuilt Hermes and is building it from source
@@ -22,6 +25,10 @@ instead. Retry in a few minutes, or `brew install cmake`.
 ```bash
 npm install
 ```
+
+`package-lock.json` pins the dependency tree resolved when this release was
+mirrored, so every clone installs the same tree. `npm ci` installs exactly
+that; `npm install` keeps it unless you change `package.json`.
 
 Installing creates `src/credentials.local.ts` from the committed template. If you
 installed with `--ignore-scripts`, copy `src/credentials.local.example.ts`
@@ -90,3 +97,9 @@ assuming it must own the token.
 
 `src/credentials.local.ts` is created by `npm install` and is already listed in
 `.gitignore`. Keep it that way — it holds your app ID and key.
+
+The app registers the `pulsate` URL scheme in
+`ios/ReactNativeSdkExample/Info.plist` for its own demo links (the Deeplinks
+screen). Your app does not need it: the SDK delivers campaign links through
+`onLink`. Register your own scheme if you want one. Two apps on a phone that
+both claim `pulsate` compete for the same links.

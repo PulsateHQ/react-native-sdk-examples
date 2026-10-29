@@ -163,7 +163,7 @@ import { saveMembership } from './pulsateAttributes';
 export async function completePurchase(member: Member, pointsEarned: number) {
   await saveMembership(member);
   await recordPurchase(pointsEarned);
-  forceAttributeSync().catch(() => {});   // Not awaited: it can stay pending on iOS
+  forceAttributeSync().catch(() => {});   // Not awaited: it can take 30 seconds on iOS
 }
 ```
 
@@ -177,9 +177,9 @@ Rules for this step:
   the window to close.
 - On iOS the SDK also sends the user's data by itself, inside the same
   30-second window. It does so after a location update or a geofence
-  crossing, for example.
-  A waiting call can be replaced by one of those sends and then never
-  settles. Do not await `forceAttributeSync()` where the user is waiting.
+  crossing, for example. Every call waiting in the window settles when the
+  window's send finishes. Do not await `forceAttributeSync()` where the user
+  is waiting.
 - Custom events do not need it. Each event is sent on its own.
 
 ## Verify
@@ -206,7 +206,7 @@ Rules for this step:
 | A date differs between iOS and Android | The platforms send dates in different formats | Store the date as a string, as in step 3 |
 | `createAttribute` rejects with `VALIDATION_ERROR` | The number is not finite or out of range, or the `Date` is invalid | Check the value against the rules in step 3 |
 | `incrementAttribute` rejects with `VALIDATION_ERROR` | The step is a decimal or out of range | Pass a whole number, as in step 4 |
-| `forceAttributeSync()` never settles on iOS | A later call, or a send the SDK made by itself, replaced it inside the 30-second window | Do not await it, as in step 5 |
+| `forceAttributeSync()` takes up to 30 seconds on iOS | An earlier call, or a send the SDK made by itself, opened a 30-second window, and the call waits for it to close | Do not await it where the user is waiting, as in step 5 |
 | An attribute appears on a different user | It was written before the session started or after `logout()` | Write attributes after `startSession()`, as in step 3 |
 
 ## How it works

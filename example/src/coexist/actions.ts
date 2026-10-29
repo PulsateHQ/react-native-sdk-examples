@@ -12,16 +12,13 @@ import { isFirebaseConfigured, record } from './record';
 
 const LOCAL_NOTIFICATION_ID = 'coexist-local';
 
+const LOCAL_CHANNEL_ID = 'coexist-local';
+
 /**
  * Posts a notification that is unambiguously notifee's, so the AppDelegate
  * `willPresent` trace shows Pulsate declining it and the host presenting it.
  */
 export async function displayCoexistLocalNotification(): Promise<string> {
-  if (Platform.OS !== 'ios') {
-    // notifee on Android needs a channel this rig does not create; the ADR
-    // result is iOS-only and the Push screen hides the card there.
-    throw new Error('The coexistence rig is iOS-only for now.');
-  }
   const settings = await notifee.requestPermission();
   record('notifee', 'requestPermission', settings);
   if (settings.authorizationStatus < AuthorizationStatus.AUTHORIZED) {
@@ -30,11 +27,21 @@ export async function displayCoexistLocalNotification(): Promise<string> {
     );
   }
 
+  const android =
+    Platform.OS === 'android'
+      ? {
+          channelId: await notifee.createChannel({
+            id: LOCAL_CHANNEL_ID,
+            name: 'Host notifications',
+          }),
+        }
+      : undefined;
   const id = await notifee.displayNotification({
     id: LOCAL_NOTIFICATION_ID,
     title: 'notifee local',
     body: 'Posted by notifee, not by Pulsate.',
     ios: { categoryId: COEXIST_CATEGORY_ID },
+    android,
   });
   record('notifee', 'displayNotification', { id });
   return id;

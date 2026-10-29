@@ -53,5 +53,17 @@ target 'ReactNativeSdkExample' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+    # Xcode 27 rejects deployment targets below 15.0; some pod resource-bundle
+    # targets (Firebase's dependencies' privacy bundles, AsyncStorage) still
+    # declare 9.0-13.0. Raise every declared target below the app's minimum to
+    # it; a configuration that declares none keeps inheriting.
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |build_config|
+        current = build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+        if current && current.to_f < min_ios_version_supported.to_f
+          build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = min_ios_version_supported
+        end
+      end
+    end
   end
 end

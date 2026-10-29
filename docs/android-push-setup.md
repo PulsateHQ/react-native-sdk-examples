@@ -8,9 +8,8 @@ Gradle files, and any `FirebaseMessagingService`.
 
 If you use Expo prebuild, follow [Set up the Expo config plugin](expo.md)
 instead. The plugin performs step 3 for you, and the icon in step 4 when you
-set `androidNotificationIcon`. The other steps stay yours. The plugin adds no
-permissions, so the `WAKE_LOCK` line in step 3 is yours to add. The iOS
-guide is [Set up push notifications on iOS](ios-push-setup.md).
+set `androidNotificationIcon`. The other steps stay yours. The iOS guide is
+[Set up push notifications on iOS](ios-push-setup.md).
 
 ## Requirements
 
@@ -145,8 +144,8 @@ To remove notifications already on screen, call `clearAllNotifications()`.
 It removes every notification the app has posted, including those from other
 libraries. It clears the launcher badge on launchers that derive it from
 posted notifications. A notification that belongs to a running foreground
-service stays. The SDK does the same on
-`logout()` and when a session starts for a different alias.
+service stays. On `logout()` and when a session starts for a different
+alias, the SDK removes only Pulsate's notifications.
 
 ## 3. Register your messaging service
 
@@ -264,22 +263,25 @@ branch. Consult that library's documentation for its forwarding entry point,
 and remove its service with `tools:node="remove"` the same way if it
 declares one.
 
-Redeclare `WAKE_LOCK` as well. A transitive dependency declares `WAKE_LOCK`
-with `android:maxSdkVersion="25"`. The manifest merger keeps that cap, so on
-Android 8 and later the app has no `WAKE_LOCK`. React Native Firebase's
-messaging receiver acquires a wake lock for every push that arrives in the
-background and crashes the process without it. One line next to the
-`tools:node="remove"` entries makes your uncapped declaration win:
+You do not need to redeclare `WAKE_LOCK`. The Pulsate SDK version this
+library depends on declares it uncapped, and the merged manifest keeps it
+that way.
+
+Library versions 1.0.x pinned Pulsate SDK 4.8.4, which had a transitive
+dependency declaring `WAKE_LOCK` with `android:maxSdkVersion="25"`. The
+manifest merger kept that cap, so on Android 8 and later the app had no
+`WAKE_LOCK`, and React Native Firebase's messaging receiver, which acquires a
+wake lock for every push that arrives in the background, crashed the process.
+If you are still on a 1.0.x version, one line next to the `tools:node="remove"`
+entries makes your uncapped declaration win:
 
 ```xml
 <!-- android/app/src/main/AndroidManifest.xml -->
 <uses-permission android:name="android.permission.WAKE_LOCK"
-    tools:node="replace" />   <!-- Pulsate -->
+    tools:node="replace" />   <!-- Pulsate, library 1.0.x only -->
 ```
 
-Firebase Messaging alone only logs a warning without the permission, so a
-Pulsate-only app does not crash. It does lose the wake locks FCM holds while
-delivering. Add the line either way.
+The line is harmless once you upgrade, so you can leave it in place.
 
 ## 4. Set the notification icon
 
@@ -356,9 +358,9 @@ want to see whether it ran.
 | `onMessageReceived` returns `true` but nothing shows in the tray | `POST_NOTIFICATIONS` was denied, or the user disabled the Pulsate channel in system settings | Step 2. Check the channel in the app's notification settings |
 | `onMessageReceived` returns `false` for a Pulsate push | The payload was not sent through Pulsate, or `PulsateProvider` was removed | Send from the Pulsate dashboard; step 3, the warning |
 | The app crashes in the background when a push arrives | The `PulsatePush` calls catch every exception, so the crash comes from the code after them | Step 3, point 2. Check what your `false` branch does with the message |
-| The app crashes in the background when a push arrives, and another push library is installed | `WAKE_LOCK` is capped at API 25 by a merged manifest, so the other library's receiver throws | Step 3, the coexistence section: redeclare `WAKE_LOCK` with `tools:node="replace"` |
+| The app crashes in the background when a push arrives, another push library is installed, and the library is a 1.0.x version | `WAKE_LOCK` is capped at API 25 by a manifest merged from Pulsate SDK 4.8.4, so the other library's receiver throws | Upgrade the library, or redeclare `WAKE_LOCK` with `tools:node="replace"` as in step 3, the coexistence section |
 | The notification shows the SDK's default icon | The drawable is not named exactly `status_icon`, or lives under `mipmap-*` rather than `drawable*` | Step 4 |
-| A refreshed FCM token reaches Pulsate only at the next app open | Expected when the app had nothing else pending to sync | Nothing to fix. The next session start sends it |
+| A refreshed FCM token reaches Pulsate only at the next app open | Expected when no user is signed in: no session has started yet, or `logout()` was called | Nothing to fix. The next session start sends it |
 
 ## How it works
 
@@ -384,13 +386,11 @@ is shown but cannot report delivery statistics, because there are no
 credentials yet. A device is targetable only after a session start, so this
 is a state a live app does not reach.
 
-**Token refresh.** The SDK does nothing with a refreshed token by itself. It
-reads the current token from Firebase when it next talks to the backend.
-When you forward a refresh, the library also asks the SDK for a user sync.
-The token then reaches Pulsate without waiting for the next session start.
-The sync follows the SDK's own rules. It runs about 15 seconds later, and
-only if the SDK has other pending user data to send. In a completely idle app the
-token rides the next session start instead.
+**Token refresh.** When you forward a refresh, the SDK sends a user update
+carrying the new token right away, as long as a user is signed in: a session
+has started and `logout()` has not been called since. Otherwise there is no
+user to attach the token to, so it rides the next session start instead. The
+library adds nothing of its own on this path.
 
 **Threading.** Both `PulsatePush` calls run on FCM's service thread. For a
 Pulsate message the SDK parses the payload, downloads the large icon and any

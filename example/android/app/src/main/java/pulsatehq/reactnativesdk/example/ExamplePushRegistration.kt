@@ -27,7 +27,7 @@ object ExamplePushRegistration {
   fun record(token: String) {
     registrationOutcome =
       "Token refreshed in this process: ${abbreviate(token)}. " +
-        "Forwarded to Pulsate; user sync forced."
+        "Forwarded to Pulsate."
   }
 
   fun recordedOutcome(): String? = registrationOutcome

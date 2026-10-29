@@ -18,7 +18,9 @@ pick the one that matches your project.
 - iOS 15.1 or newer as the app's deployment target.
 - Android `minSdkVersion` 28 or higher.
 - Expo SDK 53 or newer, for the Expo path.
-- A colour value for every key you set, as 6-digit hex: `#RRGGBB`.
+- A colour value for every key you set, as 6-digit hex: `#RRGGBB`. The
+  overlay key, `bigInAppOverlay`, also takes 8-digit hex with alpha:
+  `#AARRGGBB`.
 
 ## What you can theme
 
@@ -51,6 +53,7 @@ Add the `theme` prop to the plugin entry, then prebuild.
               "smallInAppBackground": "#101828",
               "smallInAppText": "#FFFFFF",
               "bigInAppBackground": "#FFFFFF",
+              "bigInAppOverlay": "#99101828",
               "bigInAppHeader": "#0D7AFE",
               "bigInAppAdminName": "#101828",
               "bigInAppAdminTitle": "#667085",
@@ -89,7 +92,7 @@ npx expo prebuild --clean
 
 The prebuild fails if a key is not in the [colour table](#colour-keys) or in
 the [Android strings](#android-strings) table. It also fails if a colour is not
-`#RRGGBB`, or if an Android string value is empty or only whitespace. The error
+`#RRGGBB` (for `bigInAppOverlay`, `#RRGGBB` or `#AARRGGBB`), or if an Android string value is empty or only whitespace. The error
 names the key and the value.
 
 Set every key you care about in one `colors` block. A key with no artifact on a
@@ -113,6 +116,8 @@ names. Include only the keys you want to change.
   <string>#101828</string>
   <key>pulsate_big_in_app_message_background_color</key>
   <string>#FFFFFF</string>
+  <key>pulsate_big_in_app_message_overlay_color</key>
+  <string>#99101828</string>
   <key>pulsate_big_in_app_header_color</key>
   <string>#0D7AFE</string>
   <key>pulsate_big_in_app_one_btn_color</key>
@@ -152,6 +157,7 @@ resources in your app module replace the SDK's, so include only what you change.
   <color name="pulsate_small_in_app_message_background_color">#101828</color>
   <color name="pulsate_small_in_app_message_text_color">#FFFFFF</color>
   <color name="pulsate_big_in_app_message_background_color">#FFFFFF</color>
+  <color name="pulsate_big_in_app_message_overlay_color">#99101828</color>
   <color name="pulsate_big_in_app_admin_name_text_color">#101828</color>
   <color name="pulsate_big_in_app_admin_title_text_color">#667085</color>
   <color name="pulsate_big_in_app_personal_message_border_color">#D0D5DD</color>
@@ -190,14 +196,15 @@ and ignored.
 | Config key | iOS raw key | Android resource | What it colours |
 |---|---|---|---|
 | `smallInAppBackground` | `pulsate_small_in_app_message_background_color` | `pulsate_small_in_app_message_background_color` | Small in-app message background |
-| `smallInAppText` | — | `pulsate_small_in_app_message_text_color` | Small in-app message text, corporate variant only. See [Limitations](#limitations) |
+| `smallInAppText` | — | `pulsate_small_in_app_message_text_color` | Small in-app message text, both the corporate and the personal variant |
 | `bigInAppBackground` | `pulsate_big_in_app_message_background_color` | `pulsate_big_in_app_message_background_color` | The big in-app message's card frame. It colours the strips around the content area, not the content |
+| `bigInAppOverlay` | `pulsate_big_in_app_message_overlay_color` | `pulsate_big_in_app_message_overlay_color` | The dimmed layer behind a big in-app message. Takes `#RRGGBB` or `#AARRGGBB`. See [The overlay](#the-overlay) |
 | `bigInAppHeader` | `pulsate_big_in_app_header_color` | — | The header strip on big and small in-app messages |
 | `bigInAppAdminName` | — | `pulsate_big_in_app_admin_name_text_color` | Sender name in the big in-app header |
 | `bigInAppAdminTitle` | — | `pulsate_big_in_app_admin_title_text_color` | Sender title in the big in-app header |
 | `bigInAppPersonalMessageBorder` | — | `pulsate_big_in_app_personal_message_border_color` | Border around a personal big in-app message |
 | `bigInAppHeadline` | — | `pulsate_big_in_app_headline_text_color` | Big in-app headline text |
-| `bigInAppBody` | — | `pulsate_big_in_app_text_text_color` | Big in-app body text |
+| `bigInAppBody` | — | `pulsate_big_in_app_text_text_color` | Big in-app body text, and the message text beside the sender in the big in-app header |
 | `bigInAppOneButton` | `pulsate_big_in_app_one_btn_color` | `pulsate_big_in_app_one_button_color` | Single-button background |
 | `bigInAppOneButtonText` | `pulsate_big_in_app_one_txt_color` | `pulsate_big_in_app_one_button_text_color` | Single-button label |
 | `bigInAppTwoButton` | `pulsate_big_in_app_two_btn_color` | `pulsate_big_in_app_two_button_color` | Two-button background |
@@ -211,7 +218,7 @@ and ignored.
 | `noInternetBackground` | `pulsate_no_internet_connection_background_color` | — | No-internet banner background |
 | `noInternetText` | `pulsate_no_internet_connection_text_color` | — | No-internet banner text |
 
-Twelve keys reach iOS, fifteen reach Android, six reach both. The plugin
+Thirteen keys reach iOS, sixteen reach Android, seven reach both. The plugin
 accepts only these keys. In a bare Android project you can override any other
 SDK colour resource by name.
 
@@ -220,6 +227,28 @@ SDK colour resource by name.
 > apply to both buttons. The SDK applies them after the campaign's own colours
 > and after `bigInAppOneButton` and `bigInAppTwoButton`, so they take
 > precedence over both. Leave them unset to colour the two buttons separately.
+
+## The overlay
+
+`bigInAppOverlay` colours the dimmed layer that covers your app behind a big
+in-app message. It is the only key that accepts alpha. Write it as
+`#AARRGGBB`, where `AA` is the opacity from `00` (transparent) to `FF`
+(opaque). `#RRGGBB` is also accepted and gives an opaque overlay.
+
+| Platform | Default when you do not set it | Which big in-app messages use it |
+|---|---|---|
+| iOS | Black at 85% opacity | All |
+| Android | Black at 50% opacity (`#80000000`) | Standard big in-app messages only. HTML in-app messages keep a fixed black overlay at 67% opacity (`#AA000000`), which you cannot change |
+
+The defaults differ, so set the key if you want the same overlay on both
+platforms. For example, `#80000000` gives black at 50% opacity on both.
+
+On Android, version 1.0 used black at 67% opacity behind every big in-app
+message. Set `bigInAppOverlay` to `#AA000000` to keep that look.
+
+On iOS, version 1.0 showed black at 50% opacity behind every big in-app
+message, so the 1.1 default is darker. Set `bigInAppOverlay` to `#80000000` to
+keep that look.
 
 ## Android strings
 
@@ -248,12 +277,12 @@ resource name. In a bare project they are `<string>` entries in
 
 | Limit | Detail |
 |---|---|
-| 6-digit hex only | Every value matches `#RRGGBB`. Three- and eight-digit hex are refused, not padded. |
-| No alpha | The iOS SDK drops the alpha channel, so a translucent colour would differ between platforms. |
+| 6-digit hex, except the overlay | Every value matches `#RRGGBB`. Three-digit hex is refused, not padded. Eight-digit hex is refused on every key except `bigInAppOverlay`. |
+| Alpha on the overlay only | `bigInAppOverlay` takes `#AARRGGBB`. Every other colour is opaque. |
 | No dark mode | Neither SDK ships a dark variant. On Android you can add your own `values-night/` overrides, which on the Expo path means your own config plugin, since the next prebuild rewrites `android/`; iOS has no equivalent. |
 | No fonts | Neither SDK exposes a typeface hook. Colours are the whole surface. |
 | Keys are per platform | A key with no artifact on a platform reaches only the platform that has one. One `theme` block serves both builds. |
-| `smallInAppText` reaches one Android layout | It colours the corporate small in-app message. The personal one takes its text colour from your app theme's `android:textAppearanceSmall`. Override that attribute in your theme to change it |
+| The Android overlay skips HTML messages | `bigInAppOverlay` reaches standard big in-app messages. HTML in-app messages keep a fixed overlay. See [The overlay](#the-overlay) |
 | Android resource shrinking | The SDK references its `pulsate_*` colours from its layouts, except the two sender-name colours (`bigInAppAdminName`, `bigInAppAdminTitle`), which it names only in code. The default `shrinkResources true` keeps both kinds. With `tools:shrinkMode="strict"`, add those two to a `tools:keep` list. The React Native and Expo templates leave `minifyEnabled` and `shrinkResources` off, and Pulsate builds with them off. If you turn them on, send yourself an in-app message and check the colours |
 | Campaign colours beat the one- and two-button keys | On both platforms, a campaign that sets its own button and label colours overrides the four `bigInApp…Button` keys. The key is the fallback. On iOS, `bigInAppMessageButtonBackground` and `bigInAppMessageButtonText` are applied afterwards and win over the campaign. |
 | Colours apply to the next message | Colours resolve when a view is built, so a message already on screen keeps the colours it was built with. |
@@ -265,11 +294,12 @@ resource name. In a bare project they are `<string>` entries in
 |---|---|---|
 | Prebuild fails: ``unknown key `<key>` `` | A key is not in the colour table, the Android string table, or is a misspelled `colors` / `android` / `strings` container | Use a config key from the [colour table](#colour-keys). The error lists every valid key at that level |
 | Prebuild fails: "is not a six-digit hex colour" | A value is short hex, has alpha, or is a named colour | Write the value as six hex digits after `#` |
+| Prebuild fails: "is not a six- or eight-digit hex colour" | The `bigInAppOverlay` value is short hex or a named colour | Write it as `#AARRGGBB` or `#RRGGBB` |
 | Prebuild fails: "the value must be a non-empty string" | An Android string value is empty or only whitespace | Give the string a value, or remove the key |
 | iOS logs `Pulsate: ignoring unknown PulsateTheme key "<key>"` | The `Info.plist` dictionary uses a config key instead of the iOS raw key, or a key with no iOS column | Use the iOS raw key from the colour table |
-| iOS logs `Pulsate: ignoring PulsateTheme value for "<key>": "<value>" is not a #RRGGBB colour` | A hand-edited `Info.plist` value is malformed | Correct the value. The other keys still applied |
+| iOS logs `Pulsate: ignoring PulsateTheme value for "<key>": "<value>" is not a #RRGGBB colour` | A hand-edited `Info.plist` value is malformed. For the overlay key the message ends `is not a #RRGGBB or #AARRGGBB colour` | Correct the value. The other keys still applied |
 | Colours change on iOS but not on Android | The Android build did not pick up `pulsate_theme.xml`, or the key has no Android resource | Check the file path and the Android column of the colour table, then rebuild |
-| `smallInAppText` changes nothing on a personal small in-app message | That layout takes its text colour from your app theme, not from the resource | Set `android:textAppearanceSmall` in your app theme. The corporate small in-app message uses the resource |
+| The overlay on Android does not change for some messages | HTML in-app messages use a fixed overlay | Nothing to fix. `bigInAppOverlay` applies to standard big in-app messages only |
 | An in-app button keeps the campaign's colour on Android | The campaign sets `btnColor` or `txtColor`, which wins over the per-button keys there | Clear the colour on the campaign, or accept it. On iOS, `bigInAppMessageButtonBackground` and `bigInAppMessageButtonText` are applied after the campaign's colours |
 | The feed is unthemed | Apart from the no-internet banner on iOS, feed colours do not come from this configuration | Set them in **Settings → App Settings** in the Pulsate dashboard |
 | Nothing is themed at all | `configure()` never resolved, so no Pulsate UI runs | Follow [Getting started](getting-started.md) |

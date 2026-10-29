@@ -67,12 +67,12 @@ SDK is reached.
 
 | Call | When it rejects |
 |---|---|
-| `startSession`, `logout` | The request failed. On Android that includes a backend refusal, on iOS only a transport failure. |
+| `startSession`, `logout` | The request failed or the backend refused it, invalid credentials included. The same on both platforms. |
 | `startSession` | On iOS, a later `startSession` superseded this one before the SDK answered. |
 | `isInAppEnabled`, `getSmallInAppDuration`, `isPushEnabled`, `isUserAuthorized`, `isLocationEnabled`, `getPrivacy` | On Android the SDK's local store cannot be read. On iOS these reads are synchronous and cannot fail this way. |
-| `getFeedUnreadCount` | On Android the SDK cannot start the read at all. iOS has no failure channel on this call and resolves `0` instead. An empty response there leaves the call pending until a later read succeeds. |
+| `getFeedUnreadCount` | On Android the SDK cannot start the read at all. iOS has no failure channel on this call and resolves `0` instead, also when the server answers an error status or an empty response. |
 | `showFeed` | On iOS there is no visible screen to present the feed from, or the SDK hands back no feed, or hands back something that cannot be presented. |
-| `forceAttributeSync` | On iOS the SDK reports the sync failed. |
+| `forceAttributeSync` | On iOS the sync failed, a backend error status included. |
 | `createEvent`, `createEvents` | On Android the SDK throws while accepting the event. |
 | `getLastKnownLocation` | On Android the SDK reports any failure other than the answer that it holds no fix. |
 
@@ -87,11 +87,21 @@ Most calls resolve once the native SDK has accepted the call, not once it has
 finished acting on it. The [API reference](api/README.md) entry for each
 function says which. The rule of thumb:
 
-- `startSession` and `logout` have a real result channel. On Android a
-  resolve means the backend accepted the request. On iOS it means the request
-  was sent.
+- `startSession` and `logout` have a real result channel. A resolve means
+  the backend accepted the request, on both platforms, with one exception:
+  on iOS a `startSession` for the same alias while a session is already
+  active resolves without sending anything. On iOS a rejected `logout` does
+  not always mean the device is still signed in: when the request that ends
+  the session fails, the stored alias is kept and the device stays signed
+  in; when that request succeeds and only the logout request fails, the
+  alias and the local state are cleared anyway.
 - `forceAttributeSync` settles when the sync finishes on iOS and on dispatch
   on Android.
+- On iOS an HTTP 500 to any profile sync drops the attribute and event
+  changes that request carried. That includes the syncs `startSession`,
+  `getFeedUnreadCount`, `forceAttributeSync` and `logout` send, and the
+  end-session request when the app goes to the background. Any other
+  failure keeps the changes for the next sync.
 - Every other call resolves on dispatch. A later failure inside the SDK is
   not reported to the promise.
 
@@ -100,6 +110,6 @@ function says which. The rule of thumb:
 `addListener('onError', handler)` receives a `PulsateError` whose `type` and
 `message` come from the native SDK unfiltered. It fires on Android only, once
 per in-app message the SDK did not show, with `type` `"INAPP_ERROR"`. The
-message can include the user's profile fields. Do not show it to users or send
-it to a third-party logger unredacted. See the [API
+message says why the message was not shown and names the campaign's ID. Do
+not show it to users. See the [API
 reference](api/README.md) for details.

@@ -49,9 +49,12 @@ its end. A resolve does not mean the server has accepted it.
   - The request is skipped when the stored value already matches, and
     geofence monitoring starts or stops only then. A read in between answers
     the value that was set.
-  - Once tracking has been switched off in a running process, switching it
-    back on sends the new setting to Pulsate. Geofence monitoring does not
-    restart until the app process restarts.
+  - Switching tracking off and then back on more than a minute later
+    restarts geofence monitoring in the same run, two to three minutes
+    after the second call. A second call within the minute
+    cancels the first, and monitoring never stops. Exits in between are not
+    reported. When monitoring resumes, `onGeofence` reports an `enter` for
+    every geofence the device is inside.
   - Pulsate can also switch tracking off from the server, and the app is not
     told when that happens.
   - Geofences reach Play Services only while background location permission

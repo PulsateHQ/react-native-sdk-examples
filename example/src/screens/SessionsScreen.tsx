@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TextInput } from 'react-native';
+import { Switch, TextInput } from 'react-native';
 
 import {
   configure,
@@ -48,6 +48,7 @@ export function SessionsScreen({
   const [appKey, setAppKey] = useState(defaultAppKey);
   const [outcome, setOutcome] = useState<Outcome>({ kind: 'idle' });
   const [alias, setAlias] = useState('');
+  const [debug, setDebug] = useState(false);
   const [sessionOutcome, setSessionOutcome] = useState<Outcome>({
     kind: 'idle',
   });
@@ -94,7 +95,7 @@ export function SessionsScreen({
   const onStartSession = async () => {
     setSessionOutcome({ kind: 'pending' });
     try {
-      await startSession(alias, { debug: false });
+      await startSession(alias, { debug });
       setSessionOutcome({ kind: 'resolved' });
     } catch (error: unknown) {
       setSessionOutcome({ kind: 'rejected', ...describeRejection(error) });
@@ -234,7 +235,11 @@ export function SessionsScreen({
             />
           }
         />
-        <Row label="Debug (iOS-only) — support planned for a future release" />
+        <Row
+          label="Debug (iOS-only)"
+          value="Read at session start. Shake opens the log viewer."
+          right={<Switch value={debug} onValueChange={setDebug} />}
+        />
         <Button
           testID="Start session (SESS-02)"
           title="Start session"

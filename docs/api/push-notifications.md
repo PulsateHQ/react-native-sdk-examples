@@ -96,8 +96,9 @@ badge to zero.
 
 Not scoped to Pulsate's notifications: the app's own notifications and any
 other library's are removed with them. The server-side unread count is
-untouched and reappears on the next feed refresh or session start. Both
-SDKs also do this automatically on logout and on a change of alias.
+untouched and reappears on the next feed refresh or session start. The iOS
+SDK also does this automatically on logout and on a change of alias. On
+those two occasions the Android SDK removes only Pulsate's notifications.
 
 #### Returns
 
@@ -112,8 +113,12 @@ Resolves once the call has been dispatched.
 
 #### Remarks
 
-On Android a notification owned by a running foreground service survives,
-and the promise still resolves.
+- On Android a notification owned by a running foreground service survives,
+  and the promise still resolves.
+- On iOS it also removes every local notification the app has scheduled and
+  not yet delivered.
+- On iOS it also fires `onBadgeUpdate` with `0` before the promise
+  resolves. On Android it fires nothing.
 
 #### Example
 
