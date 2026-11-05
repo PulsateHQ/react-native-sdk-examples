@@ -11,7 +11,7 @@ calls, so no rebuild is needed. To change the colours, see
   session started with an alias, as in [Getting started](getting-started.md).
 - React Native 0.76 or newer with the New Architecture enabled.
 - iOS 15.1 or newer as the app's deployment target.
-- Android `minSdkVersion` 28 or higher.
+- Android `minSdkVersion` 24 or higher.
 - An in-app campaign in the Pulsate dashboard, to see the effect.
 
 ## 1. Pause messages during a flow

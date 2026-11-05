@@ -1,8 +1,8 @@
 buildscript {
     ext {
         buildToolsVersion = "36.0.0"
-        // PulsateSdk requires minSdk 28
-        minSdkVersion = 28
+        // PulsateSdk's own minSdk since 4.10.0
+        minSdkVersion = 24
         compileSdkVersion = 36
         targetSdkVersion = 36
         ndkVersion = "27.1.12297006"

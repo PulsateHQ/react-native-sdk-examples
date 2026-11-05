@@ -11,7 +11,9 @@ next page.
   TurboModule and does not support the old architecture.
 - iOS 15.1 or newer as the app's deployment target.
 - Xcode 26.2 or newer to build for iOS.
-- Android `minSdkVersion` 28 or higher.
+- Android `minSdkVersion` 24 or higher (Android 7.0). Some features are
+  limited on older Android versions; see
+  [Android 7.0–8.1 (API 24–27)](#android-7081-api-2427).
 - A Pulsate app and its **SDK App ID** and **SDK App Key**, from the
   dashboard under **Settings → App Settings → SDK Connect**. Both are
   64-character strings.
@@ -44,17 +46,28 @@ The package brings the native Pulsate SDKs itself. The iOS SDK,
 `PULPulsate`, ships inside the package, and `pod install` links it. The
 Android SDK, `com.pulsatehq.sdk:PulsateSdk`, comes from Maven Central. If
 your `Podfile` already declares `pod 'PULPulsate'`, remove that line, or
-`pod install` fails. Nothing needs adding to your Podfile or Gradle files, with
-one exception: the React Native template starts at `minSdkVersion 24`, and the
-Android SDK requires 28. Set it in the `ext` block of your app's
-`android/build.gradle` (not `android/app/build.gradle`) before the first
-Android build, or the manifest merger stops with
-`uses-sdk:minSdkVersion 24 cannot be smaller than version 28`.
+`pod install` fails. Nothing needs adding to your Podfile or Gradle files. The
+React Native template starts at `minSdkVersion 24`, which is the minimum the
+Android SDK requires, so the template's value needs no change.
 
 > [!NOTE]
 > The iOS SDK inside the package is covered by the package's `LICENSE`,
 > which applies in place of the iOS SDK's own licence file
 > (`ios/Frameworks/PULPulsate-LICENSE.txt` of the installed package).
+
+### Android 7.0–8.1 (API 24–27)
+
+Every feature works from Android 7.0, with these limits on older versions.
+
+| Android version | Limit |
+|---|---|
+| Below 8.0 (API 26) | Notifications have no channels. The channel name, description and importance, and any channel sound or vibration settings, have no effect. |
+| Below 11 (API 30) | Freezes are not reported. Crashes are. See the [crash reporting reference](api/crash-reporting.md). |
+| 7.0 (API 24) | The device does not include ISRG Root X1, the root certificate of the Pulsate API. The SDK adds that root to its own connections on Android 7.0 only. Other connections in your app are unaffected. |
+
+The Inbox (Feed) is a hosted web page and needs an up-to-date Android System
+WebView, updated through Google Play. On an outdated WebView (for example
+version 69) the Inbox shows a blank page with no error.
 
 ## 2. Configure the SDK at startup
 
@@ -122,9 +135,6 @@ Rules for this step:
   clears notifications from the tray. On iOS that is every notification,
   including ones other libraries posted and local notifications your app has
   scheduled but not yet delivered. On Android it is Pulsate's only.
-- On Android a switch straight from one user to another can be missed, and
-  then the previous user's notifications and unread count stay. Call
-  `logout()` before you start a session for a different user.
 - A resolved promise means Pulsate accepted the session. Invalid credentials
   reject with `REQUEST_ERROR`.
 
@@ -246,7 +256,7 @@ other events the SDK raises.
 | `startSession()` rejects with `VALIDATION_ERROR` | The alias is empty or whitespace | Step 3. Pass a non-blank alias |
 | `startSession()` rejects with `REQUEST_ERROR` | The backend refused the session, usually invalid credentials | Step 3. Check the keys and the app's mode in **App Manager** |
 | `pod install` fails with `frameworks with conflicting names: pulpulsate.xcframework` | The `Podfile` declares `pod 'PULPulsate'`, a second copy of the iOS SDK the package already ships | Step 1. Remove the line and run `pod install` again |
-| The build fails on Android with a manifest merger error mentioning `minSdkVersion` | The app's `minSdkVersion` is below 28 | See **Requirements**. Set `minSdkVersion = 28` in the `ext` block of your app's `android/build.gradle` |
+| The build fails on Android with a manifest merger error mentioning `minSdkVersion` | The app's `minSdkVersion` is below 24 | See **Requirements**. Set `minSdkVersion = 24` or higher in the `ext` block of your app's `android/build.gradle` |
 
 ## How it works
 

@@ -79,7 +79,7 @@ more than once.
 | `onLink` | `url: string` | A push tap, a push action button, an in-app or feed-card call to action, or a link tapped in the feed | The same sources, with two exceptions: a push call to action whose destination type is `url` opens Safari, and a feed link whose destination uses the `pulsate://` scheme is consumed by the feed and never reaches `onLink`. Give feed cards an `https://` destination or your app's own scheme |
 | `onFeedClose` | none | A feed `showFeed()` opened has closed | Same |
 | `onUnauthorizedAction` | `{ action?: string }` | The feed came to the front for an unauthorized user. No `action` | Pulsate refused a push the user tapped, an in-app message, a call to action or an action button. `action` names which. A push that arrives while the app is in front fires nothing |
-| `onBadgeUpdate` | `count: number` | Shortly after the first `configure()` in the app process, not after a JavaScript reload. When a session starts, when the feed closes, with `0` on `logout()` and when `startSession` uses a new alias, and for a Pulsate push that carries a `badge` field. Only when the count changed. The SDK can miss a change of user made with the app in the foreground, so call `logout()` before the next user's `startSession()` | With `0` after `clearAllNotifications()`, after `logout()`, and when `startSession` uses a new alias. Also for a push whose `sender` is `Pulsate`, that carries `content-available` and `aps.badge`, in an app that declares the `remote-notification` background mode. Pulsate campaign pushes carry no `content-available` |
+| `onBadgeUpdate` | `count: number` | Shortly after the first `configure()` in the app process, not after a JavaScript reload. When a session starts, when the feed closes, with `0` on `logout()` and when `startSession` uses a new alias, and for a Pulsate push that carries a `badge` field. Only when the count changed | With `0` after `clearAllNotifications()`, after `logout()`, and when `startSession` uses a new alias. Also for a push whose `sender` is `Pulsate`, that carries `content-available` and `aps.badge`, in an app that declares the `remote-notification` background mode. Pulsate campaign pushes carry no `content-available` |
 | `onGeofence` | `GeofenceEvent` | The device entered or left a Pulsate geofence | Never fires |
 | `onError` | `PulsateError` | The SDK's retries for an in-app message are exhausted | Never fires |
 
@@ -102,7 +102,8 @@ Rules for this step:
   or an over-the-air update, nothing fires until the count changes. Read
   `getFeedUnreadCount()` when a screen appears as well.
 - On Android, `onBadgeUpdate`: the count after a session start or a feed
-  close can arrive up to 30 seconds late. A Pulsate push without a `badge`
+  close can arrive up to 30 seconds late when the SDK read the count in the
+  30 seconds before, for example a session start right after `configure()`. A Pulsate push without a `badge`
   field fires nothing.
 - On iOS, `onBadgeUpdate`: a new alias is one that differs from the alias of
   the last session. The first `startSession` after installing the app or

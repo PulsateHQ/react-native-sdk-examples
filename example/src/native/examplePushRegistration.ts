@@ -43,7 +43,7 @@ function required(): ExamplePushRegistrationModule {
  * default and there is nothing to ask, but RN's `PermissionsModule` still runs
  * `checkSelfPermission` on the (unknown) name, gets denied, and answers
  * `never_ask_again` — so without the guard the screen would say "blocked" on
- * a device where notifications work. The library's `minSdkVersion` is 28, so
+ * a device where notifications work. The library's `minSdkVersion` is 24, so
  * both branches are reachable.
  */
 async function requestAndroidNotificationPermission(): Promise<PushAuthorizationOutcome> {

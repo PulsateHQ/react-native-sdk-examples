@@ -89,9 +89,9 @@ Rules for this step:
   A call made sooner waits for the next read, up to 30 seconds, and resolves
   with that count. Calls that wait together resolve with the same number.
 - On Android the SDK also reads the count itself after `configure()`, when a
-  session starts and when the feed closes. A call made within 30 seconds of
-  any of those can take up to 30 seconds to resolve. The calls in steps 2 and
-  3 run at exactly those moments, so never block a screen on the count.
+  session starts and when the feed closes. Those reads have their own
+  30-second limit and do not delay your calls. Never block a screen on the
+  count all the same.
 - Do not poll. Read the count when a screen appears and when the feed
   closes.
 - `0` is also the answer before a user is identified and when the read fails,
@@ -108,10 +108,11 @@ Rules for this step:
   when `startSession` uses a new alias, and for a Pulsate push that carries
   a `badge` field. It fires only when the
   count changed, and after a session start or a feed close it can arrive up
-  to 30 seconds late. The SDK can miss a change of user made with the app in
-  the foreground, for example from one new user straight to another, and
-  then fires no `0`. Call `logout()` before the next user's
-  `startSession()`.
+  to 30 seconds late when the SDK read the count in the 30 seconds before,
+  for example a session start right after `configure()`. A switch straight
+  from one user to another fires `0` like any other new alias, once the new
+  user's session has started. If `startSession` rejects, call `logout()`
+  before you try again.
 - On iOS `onBadgeUpdate` fires with `0` after `clearAllNotifications()`,
   after `logout()`, and when `startSession` uses a new alias. It also fires
   for a push whose `sender` is `Pulsate` and that carries `content-available`
@@ -247,7 +248,8 @@ Rules for this step:
 | `showFeed()` resolves but nothing appears on iOS | A previous feed was still animating in | Call it once per tap. Disable the button until `onFeedClose` fires |
 | `onFeedClose` never fires | The feed was opened by Pulsate, not by `showFeed()`, or nothing was subscribed when it closed | Subscribe at startup, as in step 2. Expect no event for feeds Pulsate opens |
 | `onFeedClose` fires while the feed is still open on Android | The system recreated the feed screen after a language, font size, dark mode or multi-window change | Treat the event as a hint to refresh, not as proof the feed is gone |
-| The unread count takes up to 30 seconds to resolve | Another read ran within the last 30 seconds. On Android that includes the SDK's own reads after `configure()`, a session start and a feed close | Read on screen appearance and on `onFeedClose` only, as in step 3 |
+| The feed opens as a blank page with no error on Android | The device's Android System WebView is out of date, for example version 69. The feed is a hosted web page | Update Android System WebView through Google Play. See [Android 7.0–8.1 (API 24–27)](getting-started.md#android-7081-api-2427) |
+| The unread count takes up to 30 seconds to resolve | Your app read the count within the last 30 seconds | Read on screen appearance and on `onFeedClose` only, as in step 3 |
 | The unread count is always `0` | No session with an alias is running, or the read failed on either platform | Start a session first. Retry after 30 seconds |
 | The feed closes as soon as it opens on Android | The user is marked unauthorized | Call `setUserAuthorized(true)` or `userHasLoggedIn()`, as in step 4 |
 | `showLastUnauthorizedMessage()` shows nothing on iOS | The user was still unauthorized, the item was already shown, or it was refused more than an hour ago | Call `setUserAuthorized(true)` first, as in step 5 |
@@ -262,9 +264,10 @@ release, which lands a moment after the closing animation.
 
 The unread count is one of Pulsate's heavier requests, so both SDKs allow one
 read every 30 seconds. On Android the SDK's own reads, after `configure()`,
-a session start and a feed close, share that window. The bridge groups calls
-that arrive inside that window and answers them all from the next read. That read also sends pending profile
-and attribute changes first, because they can change the count.
+a session start and a feed close, have a window of their own, so they do not
+delay your calls. The bridge groups calls that arrive inside that window and
+answers them all from the next read. That read also sends pending profile and
+attribute changes first, because they can change the count.
 
 The authorization flag lives on the device. On Android it sits in the SDK's
 per-user store and is checked whenever the feed comes to the front. On iOS

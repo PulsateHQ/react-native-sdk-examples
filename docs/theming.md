@@ -16,7 +16,7 @@ pick the one that matches your project.
   [Getting started](getting-started.md).
 - React Native 0.76 or newer with the New Architecture enabled.
 - iOS 15.1 or newer as the app's deployment target.
-- Android `minSdkVersion` 28 or higher.
+- Android `minSdkVersion` 24 or higher.
 - Expo SDK 53 or newer, for the Expo path.
 - A colour value for every key you set, as 6-digit hex: `#RRGGBB`. The
   overlay key, `bigInAppOverlay`, also takes 8-digit hex with alpha:
@@ -272,6 +272,10 @@ resource name. In a bare project they are `<string>` entries in
 > Rename yours.
 
 `pulsate_notification_channel_id` identifies the channel and is not themeable.
+
+Below Android 8.0 (API 26) notifications have no channels, so the channel name
+and description have no effect there. See
+[Android 7.0–8.1 (API 24–27)](getting-started.md#android-7081-api-2427).
 
 ## Limitations
 

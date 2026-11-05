@@ -16,8 +16,7 @@ prompts, and `configure()`. If you own your native projects instead, follow
 - Expo SDK 53 or newer. The plugin edits the Swift `AppDelegate` that SDK 53
   and later generate and refuses an Objective-C one.
 - iOS 15.1 or newer as the app's deployment target.
-- Android `minSdkVersion` 28 or higher. The plugin raises it in Groovy
-  Gradle projects.
+- Android `minSdkVersion` 24 or higher. Expo's default already meets it.
 - A development build or a prebuild. The SDK cannot run in Expo Go.
 - `ios.bundleIdentifier` and `android.package` set in the app config.
 - The prerequisites of both platforms. An APNs key uploaded to Pulsate, as
@@ -173,7 +172,6 @@ APIs or a physical device on Android.
 | Prebuild fails: "androidNotificationIcon must be a PNG" | The file the prop points at is not a PNG | Point the prop at a white-on-transparent PNG, as in step 1 |
 | Prebuild fails: "androidNotificationIcon needs `@expo/image-utils`" | The mod ran outside `expo prebuild`, so the resizer could not be resolved | Run `npx expo prebuild`, or drop the prop and add a `status_icon` drawable by hand |
 | Prebuild fails: "the first Xcode target is not the application target" | The Xcode project lists another target first, so the extension cannot be embedded | Add the `PulsateNotificationService` target in Xcode, or set `iosRichPush` to `false` in step 1 |
-| Prebuild warns that `android/build.gradle.kts` is a Kotlin DSL project | The plugin edits only the Groovy Gradle files, so `minSdkVersion` was left alone | Set `android.minSdkVersion` to 28 with `expo-build-properties` |
 
 ## How it works
 
@@ -198,8 +196,6 @@ marked in the generated file:
 
 **Android**
 
-- Raises `minSdkVersion` to 28 in `gradle.properties` and in
-  `app/build.gradle`. A higher floor is left alone.
 - Removes the SDK's own `FirebaseMessagingService` from the merged manifest.
   Registers a generated `PulsateMessagingService` at priority 1, which chains
   through `PulsatePush` exactly as the Android guide's step 3.

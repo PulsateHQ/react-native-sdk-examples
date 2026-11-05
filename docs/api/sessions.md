@@ -95,9 +95,9 @@ Resolves once the backend has accepted the session.
 #### Remarks
 
 - On Android a different alias clears Pulsate's notifications only, once
-  the session has started. A switch straight from one user to another can
-  be missed, so the previous user's notifications and unread count stay.
-  Call [logout](#logout) before starting a session for a different user.
+  the session has started. This includes a switch straight from one user
+  to another. The reset needs the new user's session to start: if
+  `startSession` rejects, call [logout](#logout) before you try again.
 - On iOS a different alias clears every notification of the app, including
   other libraries' and local notifications scheduled but not yet delivered.
   This happens before the request, so also when `startSession` rejects with

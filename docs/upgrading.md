@@ -5,6 +5,56 @@ when you move to a newer version of `@pulsatehq/react-native-sdk`. Each
 section covers one upgrade. Apply them in order if you skip a version. For
 every change in a release, see the [changelog](../CHANGELOG.md).
 
+## Upgrade from 1.1 to 1.2
+
+Version 1.2 moves to the Pulsate Android SDK 4.10.0. The iOS SDK is
+unchanged, PULPulsate 4.10.1. The JavaScript API is the same, so existing
+calls compile unchanged.
+
+### Requirements
+
+- Android `minSdkVersion` 24 or higher. It used to be 28. Your app can lower
+  its own value. Some features are limited on Android 7.0–8.1, as
+  [Android 7.0–8.1 (API 24–27)](getting-started.md#android-7081-api-2427)
+  lists.
+- iOS requirements are unchanged.
+
+### Steps
+
+1. Install the new version.
+
+   ```sh
+   npm install @pulsatehq/react-native-sdk@^1.2.0
+   ```
+
+2. If your app uses Firebase libraries without versions and declares no
+   Firebase BoM of its own, add one to `android/app/build.gradle`. The
+   library no longer exports a Firebase BoM, so those libraries have no
+   version to resolve to.
+
+   ```groovy
+   dependencies {
+       implementation platform("com.google.firebase:firebase-bom:<version>")
+   }
+   ```
+
+3. Optional: lower your app's `minSdkVersion` to as low as 24. On Expo, an
+   app prebuilt with an earlier version keeps a `minSdkVersion=28` line with
+   a `# D-17` comment in `android/gradle.properties` until the next
+   `npx expo prebuild --clean`. The line is harmless, and you can lower the
+   value.
+
+### Behaviour changes on Android
+
+| Change | What to do |
+|---|---|
+| The library exposes `firebase-messaging` 23.3.0 as a minimum. A newer version declared by your app, directly or through its own Firebase BoM, wins. The library used to import Firebase BoM 34.3.0, so an app that declares no Firebase version of its own now gets `firebase-messaging` 23.3.0 instead of 25.0.1. The SDK no longer pulls in `firebase-storage` | Step 2. See [Set up push notifications on Android](android-push-setup.md) |
+| Release builds with R8 no longer fail with `Missing class com.google.firebase.ktx.Firebase` in apps on `firebase-messaging` 23.3.0 (Firebase BoM 32.4.0) | Nothing |
+| The SDK runs on Android 7.0 (API 24) and later. Below Android 8.0 notifications have no channels and the feed needs an up-to-date Android System WebView | See [Android 7.0–8.1 (API 24–27)](getting-started.md#android-7081-api-2427) |
+| A switch straight from one user to another, with the app in the foreground, is no longer missed. `onBadgeUpdate` fires `0`, the previous user's Pulsate notifications leave the tray, and the new user's session-start work runs | A `logout()` you added before the next user's `startSession()` only for this can go. Keep it where the previous user is meant to sign out. The reset needs the new user's session to start: if `startSession` rejects, call `logout()` before you try again |
+| `getFeedUnreadCount()` no longer waits up to 30 seconds after `configure()`, a session start or a feed close. The SDK's own reads now have a 30-second limit of their own. Your calls are still limited to one read every 30 seconds | Nothing |
+| The counts `onBadgeUpdate` reports after a session start or a feed close can still arrive up to 30 seconds late, but only when the SDK read the count in the 30 seconds before | Nothing |
+
 ## Upgrade from 1.0 to 1.1
 
 Version 1.1 moves to the Pulsate iOS SDK 4.10.1 and the Pulsate Android SDK

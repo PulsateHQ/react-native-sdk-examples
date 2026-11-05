@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.2.0
+
+### Minor Changes
+
+- 28067d0: **Android: Pulsate Android SDK 4.10.0**
+
+  - The minimum Android version is now 7.0 (API 24), down from 9 (API 28). Apps
+    with a `minSdkVersion` from 24 to 27 can now install the library. The Expo
+    config plugin no longer raises `minSdkVersion`, because Expo's default of 24
+    is enough.
+  - Below Android 8.0 notifications have no channels. The Inbox needs an
+    up-to-date Android System WebView: on WebView 69 it shows a blank page and
+    reports no error. Freeze reports still need Android 11 or later.
+  - The library no longer exports a Firebase BoM. It now depends on
+    `firebase-messaging` 23.3.0 or newer, and a newer version your app declares
+    wins. This fixes R8 release builds failing with "Missing class
+    com.google.firebase.ktx.Firebase" in apps on `firebase-messaging` 23.3.0. If
+    your app uses Firebase libraries without declaring a Firebase BoM, add one.
+    An app that declares no Firebase version of its own now gets
+    `firebase-messaging` 23.3.0 instead of 25.0.1; declare a newer one to keep
+    it.
+  - On Android a switch straight from one user to another, with the app in the
+    foreground, is no longer missed: `onBadgeUpdate` fires `0`, the previous
+    user's Pulsate notifications leave the tray, and the new user's
+    session-start work runs. Calling `logout()` before the next user's
+    `startSession()` is no longer needed for this. The reset needs the new
+    user's session to start: if `startSession()` rejects, call `logout()`
+    before you try again.
+  - On Android `getFeedUnreadCount()` no longer waits up to 30 seconds after
+    `configure()`, a session start or a feed close. The SDK's own reads have a
+    30-second limit of their own, so the counts `onBadgeUpdate` reports after a
+    session start or a feed close can still arrive up to 30 seconds late when
+    the SDK read the count shortly before. Calls to `getFeedUnreadCount()` are
+    still limited to one read every 30 seconds.
+
 ## 1.1.0
 
 ### Minor Changes

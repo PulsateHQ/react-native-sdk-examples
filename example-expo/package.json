@@ -12,7 +12,7 @@
     "postinstall": "node -e \"const f='credentials.local.ts',t=f.replace('.local','.local.example'),s=require('fs');s.existsSync(f)||s.copyFileSync(t,f)\""
   },
   "dependencies": {
-    "@pulsatehq/react-native-sdk": "1.1.0",
+    "@pulsatehq/react-native-sdk": "1.2.0",
     "expo": "~54.0.36",
     "expo-dev-client": "~6.0.21",
     "react": "19.1.0",

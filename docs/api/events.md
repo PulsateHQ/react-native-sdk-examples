@@ -65,19 +65,19 @@ JavaScript reload in the same process, such as a development reload, an
 expo-updates `reloadAsync()` or a CodePush restart. Read
 [Feed.getFeedUnreadCount](feed.md#getfeedunreadcount) when a screen appears, which can take up to
 30 seconds to resolve. When a session starts, with the user's count, and with `0`
-first when the user changed. The SDK can miss a change of user made with the
-app in the foreground, for example from one new user straight to another,
-and then fires no `0`; call `logout()` before the next user's
-`startSession()`. A `startSession()` that rejects fires nothing,
-even for a different user, so the previous user's count stays until the
+first when the user changed, including a switch straight from one user to
+another with the app in the foreground. A `startSession()` that rejects
+fires nothing, even for a different user, so the previous user's count stays until the
 next trigger. When the user leaves the feed. With `0` on `logout()`. For a
 Pulsate push that arrives while the app process is running and carries a
 `badge` field, with that number; a push without one fires nothing. Every
 read of the unread total reports `0` when the request fails, so a `0` after
 `configure()`, a session start or leaving the feed says nothing about the
-inbox. The counts after a session start and after leaving the feed share
-the 30-second limit of `getFeedUnreadCount()`, so they can arrive up to 30
-seconds late. Not fired for a push that starts the process from cold:
+inbox. The SDK reads the count itself at most once every 30 seconds,
+separately from `getFeedUnreadCount()`, so the counts after a session start
+and after leaving the feed can arrive up to 30 seconds late when the SDK
+read the count in the 30 seconds before, for example a session start right
+after `configure()`. Not fired for a push that starts the process from cold:
 the listener is registered by `configure()`, which runs after JavaScript
 starts. The SDK holds a single listener. A brownfield host that registers
 its own unread-count listener natively replaces the bridge's, and this event

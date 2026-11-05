@@ -14,8 +14,8 @@ set `androidNotificationIcon`. The other steps stay yours. The iOS guide is
 ## Requirements
 
 - React Native 0.76 or newer with the New Architecture enabled.
-- `minSdkVersion` 28 or higher in `android/build.gradle`. The Pulsate SDK
-  declares 28 and the manifest merger fails the build below it.
+- `minSdkVersion` 24 or higher in `android/build.gradle`. The Pulsate SDK
+  declares 24 and the manifest merger fails the build below it.
 - A Firebase project of your own with an Android app registered under your
   application ID. Pulsate sends through Firebase Cloud Messaging; there is no
   other transport on Android.
@@ -25,9 +25,11 @@ set `androidNotificationIcon`. The other steps stay yours. The iOS guide is
   verification.
 
 You do not add `firebase-messaging` to your own dependencies. The library
-exposes it at the version the Pulsate SDK ships, so your messaging service
-compiles against the classes the SDK runs on. If the app already declares a
-Firebase BoM, keep it; Gradle resolves to the higher version.
+exposes `firebase-messaging` 23.3.0 as a minimum, so your messaging service
+compiles against it. If the app declares a newer version, directly or through
+its own Firebase BoM, that version wins. The library does not export a
+Firebase BoM, so an app that uses other Firebase libraries without versions
+declares its own BoM.
 
 ## 1. Connect Firebase to the app and to Pulsate
 
@@ -295,7 +297,9 @@ The notification channel is created by the SDK at process start from three
 string resources. You can override them the same way. The resources are
 `pulsate_notification_channel_id`, `pulsate_notification_channel_name` and
 `pulsate_notification_channel_description`. An override takes effect on the
-next launch.
+next launch. Below Android 8.0 (API 26) notifications have no channels, so
+these resources have no effect there. See
+[Android 7.0–8.1 (API 24–27)](getting-started.md#android-7081-api-2427).
 
 ## 5. Optional: remove the location permissions
 

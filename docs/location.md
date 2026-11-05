@@ -9,7 +9,7 @@ Expo apps; where Expo differs, the step says so.
 - `@pulsatehq/react-native-sdk` installed, `configure()` resolved and a
   session started with an alias, as in [Getting started](getting-started.md).
 - iOS 15.1 or newer as the app's deployment target.
-- Android `minSdkVersion` 28 or higher, and Google Play services on the
+- Android `minSdkVersion` 24 or higher, and Google Play services on the
   device or emulator. Geofences also need
   [**Location Accuracy**](https://support.google.com/android/answer/3467281)
   turned on, which some devices label **Google Location Accuracy**.
