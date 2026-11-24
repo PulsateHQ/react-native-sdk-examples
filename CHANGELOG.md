@@ -1,5 +1,68 @@
 # Changelog
 
+## 1.3.0
+
+### Minor Changes
+
+- a786b24: **iOS: Pulsate iOS SDK 4.11.0. Android: Pulsate Android SDK 4.11.0**
+
+  - On iOS, `logout()` and a `startSession` with a new alias now remove only
+    Pulsate's notifications from the tray, as on Android. Your app's own
+    notifications, scheduled or delivered, and other libraries' stay.
+    `clearAllNotifications()` still removes every notification. On `logout()`
+    and a new-alias `startSession`, `onBadgeUpdate` still fires `0`; on Android
+    only when the count was not already `0`.
+  - On iOS, a Pulsate push that arrives while the app is in the foreground now
+    counts as delivered, and a push sent without a message counts against its
+    campaign. Expect delivery counts in the dashboard to rise.
+  - On iOS, a Pulsate push that wakes the app in the background now stores and
+    sends its delivery before it completes, instead of after the user next opens
+    the app. The SDK calls the push's completion handler at most once, and while
+    the app keeps running at the latest 25 seconds after it is handed the push.
+    No change is needed in your `AppDelegate`: when `PulsatePush.didReceiveRemoteNotification` returns
+    `true`, Pulsate completes the push, as before.
+  - On iOS, overlapping syncs no longer send the same statistics twice.
+    `forceAttributeSync()` can now also wait for a request already in flight
+    before it resolves.
+  - On iOS, the big in-app message and its close button stay inside the safe
+    area. On iPhones with a notch or Dynamic Island the close button of a tall
+    message sat under the status bar and did not respond to taps.
+  - On Android, the SDK's push and call-to-action activities are no longer
+    exported, so other apps cannot open them. No change is needed.
+  - On Android, the SDK adds `androidx.browser` 1.8.0 and two `<queries>`
+    entries, for the in-app browser, to your app's manifest. No change is
+    needed.
+
+- a786b24: **URL Open Mode: open web links in the in-app browser (PUL-3091)**
+
+  - Three new calls: `setUrlOpenMode('inApp' | 'external')`, `getUrlOpenMode()`
+    and `openUrl(url)`. In `'inApp'` mode `openUrl` opens an `http` or `https`
+    link in an `SFSafariViewController` on iOS and a Chrome Custom Tab on
+    Android. `'external'`, the default, opens it in the system browser. The mode
+    is stored on the device. `openUrl` resolves `true` when the SDK started
+    opening the link and `false` for anything that is not an `http` or `https`
+    URL with a host, or, on Android, when nothing on the device could open it.
+    Nothing opens for `false`. `setUrlOpenMode` and `getUrlOpenMode` reject
+    `CONFIGURATION_ERROR` until `configure()` has resolved, and so does
+    `openUrl` on iOS. Call `openUrl` while the app is in the foreground. On
+    Android, `true` means Android accepted the start; from the background,
+    Android 10 and later can still block it.
+  - The SDK never opens a link in a React Native app: it hands each one to your
+    `onLink` handler. To use the in-app browser, change the handler to pass the
+    links it does not route to `openUrl`, with `Linking.openURL` as the fallback
+    when it answers `false` or rejects. Route your own Universal Links and App Links before
+    `openUrl`, or `'inApp'` opens them in the browser. See
+    [Choose where links open](docs/links.md).
+  - On iOS, a push whose destination type is `url`, and its action buttons, now
+    reach `onLink`. They used to open Safari without calling your handler. A
+    handler that routes only your own scheme and drops the rest now opens nothing
+    for them, so pass every link you do not route to `openUrl`.
+  - On the first launch after the upgrade, a push that starts the app can reach
+    `onLink` before your `setUrlOpenMode` call runs, and open once with the
+    previous mode. Call `setUrlOpenMode` directly after `configure()` resolves.
+    On Android that link can arrive before `configure()` resolves, and
+    `openUrl` works then.
+
 ## 1.2.0
 
 ### Minor Changes

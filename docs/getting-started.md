@@ -132,9 +132,8 @@ Rules for this step:
 - Call it with the app in the foreground. In the background the SDK retries
   and then fails: after about 12 seconds on iOS, about 30 seconds on Android.
 - Starting a session for a different alias replaces the previous user and
-  clears notifications from the tray. On iOS that is every notification,
-  including ones other libraries posted and local notifications your app has
-  scheduled but not yet delivered. On Android it is Pulsate's only.
+  clears Pulsate's notifications from the tray. Your app's own notifications
+  and other libraries' stay.
 - A resolved promise means Pulsate accepted the session. Invalid credentials
   reject with `REQUEST_ERROR`.
 
@@ -181,7 +180,7 @@ your app owns.
 
 ```ts
 // src/links.ts
-import { addListener } from '@pulsatehq/react-native-sdk';
+import { addListener, openUrl } from '@pulsatehq/react-native-sdk';
 import { createNavigationContainerRef } from '@react-navigation/native';
 import { Linking } from 'react-native';
 
@@ -195,11 +194,14 @@ export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 // A link can arrive before the navigation container is ready, so hold it.
 let pendingUrl: string | null = null;
 
-addListener('onLink', (url) => {
+addListener('onLink', async (url) => {
   if (!url.startsWith('myapp://')) {
-    // Not ours: hand it to the system. `openURL` rejects when no app claims
-    // the scheme.
-    Linking.openURL(url).catch(() => {});
+    // Not ours: open a web link under the URL open mode, and hand anything
+    // else to the system. `openURL` rejects when no app claims the scheme.
+    const opened = await openUrl(url).catch(() => false);
+    if (!opened) {
+      Linking.openURL(url).catch(() => {});
+    }
     return;
   }
   if (navigationRef.isReady()) {
@@ -235,6 +237,7 @@ export default function App() {
 }
 ```
 
+[Choose where links open](links.md) covers `openUrl` and the in-app browser.
 [Subscribe to SDK events](handling-events.md) covers the held links and the
 other events the SDK raises.
 
@@ -261,12 +264,8 @@ other events the SDK raises.
 ## How it works
 
 Nothing opens unless your app opens it. The SDK has already answered that your
-app is handling the link. A URL you neither route nor pass to
+app is handling the link. A URL you neither route nor pass to `openUrl` or
 `Linking.openURL` goes nowhere.
-
-On iOS a push call to action whose destination type is `url` opens Safari
-without consulting the listener. Use a `deeplink` destination for anything you
-want to route yourself.
 
 ## Next steps
 

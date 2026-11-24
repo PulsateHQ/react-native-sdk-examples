@@ -13,4 +13,5 @@
 | [Location](location.md) | Turn Pulsate's location tracking on or off, read the last known fix, and follow geofence crossings. |
 | [Crash reporting](crash-reporting.md) | Turn the native SDKs' crash reporting off or on, and read the stored choice. |
 | [Events](events.md) | Subscribe to the events the SDK initiates. |
+| [Links](links.md) | Choose where the web links Pulsate hands your app open: in the app, or in the system browser. |
 | [Errors](errors.md) | The error type every promise rejects with, and the rejection types. |

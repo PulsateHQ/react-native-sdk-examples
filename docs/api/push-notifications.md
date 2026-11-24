@@ -96,9 +96,9 @@ badge to zero.
 
 Not scoped to Pulsate's notifications: the app's own notifications and any
 other library's are removed with them. The server-side unread count is
-untouched and reappears on the next feed refresh or session start. The iOS
-SDK also does this automatically on logout and on a change of alias. On
-those two occasions the Android SDK removes only Pulsate's notifications.
+untouched and reappears on the next feed refresh or session start. On
+logout and on a change of alias both SDKs remove only Pulsate's
+notifications; call this after them to clear the rest.
 
 #### Returns
 

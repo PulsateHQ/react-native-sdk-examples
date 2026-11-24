@@ -2,6 +2,7 @@ import { Linking } from 'react-native';
 
 import {
   addListener,
+  openUrl,
   type PulsateEvents,
   type Subscription,
 } from '@pulsatehq/react-native-sdk';
@@ -10,6 +11,7 @@ import { addInternalListener } from '@pulsatehq/react-native-sdk/internal';
 import { routeLink } from '../links/navigation';
 import {
   getConsumeInJs,
+  loadConsumeInJs,
   markRegistryStarted,
   recordLink,
 } from '../links/store';
@@ -58,15 +60,25 @@ export function logAppEvent(name: string, detail = ''): void {
   record(name, detail, 'app');
 }
 
-function forwardToLinking(url: string): void {
-  Linking.openURL(url).then(
-    () => {
-      logAppEvent('link.openURL', `Opened: ${url}`);
-    },
-    (error: unknown) => {
-      logAppEvent('link.openURL', `Rejected: ${describeError(error)}`);
+async function openDeclinedLink(url: string): Promise<void> {
+  try {
+    if (await openUrl(url)) {
+      logAppEvent('link.openUrl', `Opened: ${url}`);
+      return;
     }
-  );
+    logAppEvent('link.openUrl', `Refused, falling back: ${url}`);
+  } catch (error: unknown) {
+    logAppEvent(
+      'link.openUrl',
+      `Rejected, falling back: ${describeError(error)}`
+    );
+  }
+  try {
+    await Linking.openURL(url);
+    logAppEvent('link.openURL', `Opened: ${url}`);
+  } catch (error: unknown) {
+    logAppEvent('link.openURL', `Rejected: ${describeError(error)}`);
+  }
 }
 
 /**
@@ -119,11 +131,15 @@ function subscribeAll(): Subscription[] {
   subscribe('onLink', (url) => {
     record('onLink', url, 'event');
     recordLink(url);
-    if (getConsumeInJs()) {
-      routeLink(url);
-      return;
-    }
-    forwardToLinking(url);
+    loadConsumeInJs()
+      .catch(() => {})
+      .then(() => {
+        if (getConsumeInJs()) {
+          routeLink(url);
+          return;
+        }
+        openDeclinedLink(url);
+      });
   });
 
   subscribe('onGeofence', (event) => {
@@ -162,6 +178,12 @@ export function startListenerRegistry(
 ): () => void {
   notifier = options.notify;
   markRegistryStarted();
+  loadConsumeInJs().catch((error: unknown) => {
+    logAppEvent(
+      'link.consumeInJs',
+      `Stored choice unreadable, using the default: ${describeError(error)}`
+    );
+  });
   const subscriptions = subscribeAll();
 
   logAppEvent(

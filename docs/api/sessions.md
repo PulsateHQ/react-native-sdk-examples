@@ -46,6 +46,12 @@ rejects with `CONFIGURATION_ERROR` until then.
 - `CONFIGURATION_ERROR` on Android when the SDK's `PulsateProvider` content
   provider was removed from the manifest.
 
+#### Remarks
+
+On iOS, if your app creates the Pulsate SDK natively before this call, that
+instance keeps its keys and the keys passed here are ignored. Create the SDK
+in one place only.
+
 #### Example
 
 ```ts
@@ -98,8 +104,8 @@ Resolves once the backend has accepted the session.
   the session has started. This includes a switch straight from one user
   to another. The reset needs the new user's session to start: if
   `startSession` rejects, call [logout](#logout) before you try again.
-- On iOS a different alias clears every notification of the app, including
-  other libraries' and local notifications scheduled but not yet delivered.
+- On iOS a different alias clears Pulsate's notifications only. Your app's
+  own notifications, scheduled or delivered, and other libraries' stay.
   This happens before the request, so also when `startSession` rejects with
   `REQUEST_ERROR`.
 - On iOS the first session after install, or after a `logout()` that ended
@@ -122,10 +128,10 @@ function logout(): Promise<void>;
 Ends the session for the user the SDK holds.
 
 The stored alias is cleared, and on Android in-app state goes with it.
-Notifications are cleared on both platforms: on Android the Pulsate
-notifications, once a session has started; on iOS every notification of the
-app, including local notifications scheduled but not yet delivered. Call it
-once per sign-out.
+Pulsate's notifications are cleared on both platforms, on Android once a
+session has started. Your app's own notifications and other libraries' stay;
+call `clearAllNotifications()` to remove those too. Call it once
+per sign-out.
 
 #### Returns
 
@@ -261,9 +267,11 @@ design: they fold a burst of changes into one request.
 
 `Promise`\<`void`\>
 
-On iOS, resolves when the sync finishes, and immediately when
-there is nothing to sync. On Android, resolves once the call has been
-dispatched. The sync runs about fifteen seconds later, and only if the SDK
+On iOS, resolves when the sync finishes. With nothing to sync it
+resolves at once, unless requests already in flight carry pending
+statistics; then it resolves when they are answered, or twenty-five seconds
+after the newest of them was sent. On Android, resolves once the call has
+been dispatched. The sync runs about fifteen seconds later, and only if the SDK
 has other pending user data. A later failure is not reported.
 
 #### Throws
@@ -279,8 +287,10 @@ window runs at once. A later call inside the open window settles at the end
 of the window, when the sync the window sends at its end finishes. Every
 call queued in the window settles with that sync's result. The SDK's own user
 updates share the same window, such as those after a location update or a
-geofence crossing. Do not await this promise where the user is waiting: it
-can take thirty seconds.
+geofence crossing. It also waits for requests already in flight that carry
+pending statistics, at most until twenty-five seconds after the newest of
+them was sent. Do not await this
+promise where the user is waiting: it can take thirty seconds or more.
 
 #### Example
 

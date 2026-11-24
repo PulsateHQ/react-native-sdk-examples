@@ -1,3 +1,5 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 export type LinkRecord = {
   readonly url: string;
   readonly receivedAtMs: number;
@@ -20,11 +22,15 @@ export type LinkRecord = {
  */
 const STARTUP_BURST_MS = 2000;
 
+const CONSUME_IN_JS_KEY = 'pulsate.example.consumeInJs';
+
 type Listener = () => void;
 
 let registryStartedAtMs: number | null = null;
 let lastLink: LinkRecord | null = null;
 let consumeInJs = true;
+let consumeInJsLoaded: Promise<void> | null = null;
+let consumeInJsSetThisProcess = false;
 const listeners = new Set<Listener>();
 
 function notifyListeners(): void {
@@ -57,7 +63,29 @@ export function getConsumeInJs(): boolean {
   return consumeInJs;
 }
 
-export function setConsumeInJs(value: boolean): void {
+/**
+ * Resolves once the stored choice has been read, at most once per process.
+ * Rejects when storage fails, leaving the default in force.
+ */
+export function loadConsumeInJs(): Promise<void> {
+  consumeInJsLoaded ??= AsyncStorage.getItem(CONSUME_IN_JS_KEY).then(
+    (stored) => {
+      // A tap before the read resolves wins over the stored value.
+      if (stored !== null && !consumeInJsSetThisProcess) {
+        setConsumeInJsState(stored === 'true');
+      }
+    }
+  );
+  return consumeInJsLoaded;
+}
+
+export async function setConsumeInJs(value: boolean): Promise<void> {
+  consumeInJsSetThisProcess = true;
+  setConsumeInJsState(value);
+  await AsyncStorage.setItem(CONSUME_IN_JS_KEY, String(value));
+}
+
+function setConsumeInJsState(value: boolean): void {
   if (value === consumeInJs) {
     return;
   }

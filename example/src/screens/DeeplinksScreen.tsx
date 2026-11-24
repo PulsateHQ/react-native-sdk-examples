@@ -1,5 +1,12 @@
-import { useState, useSyncExternalStore } from 'react';
-import { Linking, Switch, Text } from 'react-native';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { Linking, Switch, Text, TextInput } from 'react-native';
+
+import {
+  getUrlOpenMode,
+  openUrl,
+  setUrlOpenMode,
+  type UrlOpenMode,
+} from '@pulsatehq/react-native-sdk';
 
 import {
   getConsumeInJs,
@@ -17,6 +24,7 @@ import {
   Screen,
   SectionHeader,
   describeRejection,
+  useInputStyle,
   useTheme,
   type Outcome,
 } from '../ui';
@@ -33,18 +41,89 @@ function describeDelivery(link: LinkRecord): string {
 
 export function DeeplinksScreen() {
   const { colors, type } = useTheme();
+  const inputStyle = useInputStyle();
   const lastLink = useSyncExternalStore(subscribe, getLastLink);
   const consumeInJs = useSyncExternalStore(subscribe, getConsumeInJs);
   const [openOutcome, setOpenOutcome] = useState<Outcome>({ kind: 'idle' });
+  const [mode, setMode] = useState<UrlOpenMode | null>(null);
+  const [modeOutcome, setModeOutcome] = useState<Outcome>({ kind: 'idle' });
+  const [urlToOpen, setUrlToOpen] = useState('https://example.com');
+  const [openUrlOutcome, setOpenUrlOutcome] = useState<Outcome>({
+    kind: 'idle',
+  });
 
-  const onToggleConsume = (value: boolean) => {
-    setConsumeInJs(value);
+  const readUrlOpenMode = async (
+    label: string,
+    isCurrent: () => boolean = () => true
+  ) => {
+    setModeOutcome({ kind: 'pending' });
+    try {
+      const stored = await getUrlOpenMode();
+      if (isCurrent()) {
+        setMode(stored);
+        setModeOutcome({ kind: 'resolved', detail: `${label}: ${stored}.` });
+      }
+    } catch (error: unknown) {
+      if (isCurrent()) {
+        setModeOutcome({ kind: 'rejected', ...describeRejection(error) });
+      }
+    }
+  };
+
+  // LINK-02. Read once on mount, as Settings does for CRASH-01: it rejects
+  // CONFIGURATION_ERROR when bootstrap did not configure.
+  useEffect(() => {
+    let current = true;
+    readUrlOpenMode('Resolved on mount', () => current);
+    return () => {
+      current = false;
+    };
+  }, []);
+
+  const onToggleMode = async (inApp: boolean) => {
+    const next: UrlOpenMode = inApp ? 'inApp' : 'external';
+    setModeOutcome({ kind: 'pending' });
+    try {
+      await setUrlOpenMode(next);
+    } catch (error: unknown) {
+      setModeOutcome({ kind: 'rejected', ...describeRejection(error) });
+      return;
+    }
+    logAppEvent('link.urlOpenMode', `Set to ${next}.`);
+    // The Stored mode row shows what getUrlOpenMode resolved, not `next`: the
+    // device flows assert the SDK took the write.
+    await readUrlOpenMode(`Set to ${next}, read back`);
+  };
+
+  const onOpenUrl = async () => {
+    setOpenUrlOutcome({ kind: 'pending' });
+    try {
+      const opened = await openUrl(urlToOpen);
+      setOpenUrlOutcome({ kind: 'resolved', detail: `openUrl: ${opened}.` });
+      logAppEvent('link.openUrl', `Manual: ${urlToOpen} -> ${opened}`);
+    } catch (error: unknown) {
+      const rejection = describeRejection(error);
+      setOpenUrlOutcome({ kind: 'rejected', ...rejection });
+      logAppEvent('link.openUrl', `Manual: rejected — ${rejection.message}`);
+    }
+  };
+
+  const onToggleConsume = async (value: boolean) => {
+    const saving = setConsumeInJs(value);
     logAppEvent(
       'link.consumeInJs',
       value
         ? 'On: the handler consumes the link and nothing opens.'
-        : 'Off: the handler forwards to Linking.openURL.'
+        : 'Off: the handler forwards to openUrl.'
     );
+    try {
+      await saving;
+    } catch (error: unknown) {
+      logAppEvent(
+        'link.consumeInJs',
+        `Not stored, kept for this run only: ${describeRejection(error).message}`
+      );
+    }
   };
 
   const onOpenLastLink = async () => {
@@ -88,8 +167,8 @@ export function DeeplinksScreen() {
           value="Log screen + toast, and the readout below"
         />
         <Row
-          label="iOS caveats"
-          value="A push whose action is a plain web address is opened by Safari without reaching the app, so seeing no event for one is expected rather than a fault. A link inside the feed may also be handled by the system rather than this listener — check the Log screen to see which fired."
+          label="iOS caveat"
+          value="A link inside the feed may be handled by the system rather than this listener — check the Log screen to see which fired."
         />
       </Card>
 
@@ -97,7 +176,13 @@ export function DeeplinksScreen() {
       <Card>
         <Row
           label="Consume in JS"
-          right={<Switch value={consumeInJs} onValueChange={onToggleConsume} />}
+          right={
+            <Switch
+              testID="consume-in-js-switch"
+              value={consumeInJs}
+              onValueChange={onToggleConsume}
+            />
+          }
         />
         <Row
           label="On"
@@ -105,7 +190,48 @@ export function DeeplinksScreen() {
         />
         <Row
           label="Off"
-          value="The handler declines it and calls Linking.openURL, so an http(s) URL opens the browser."
+          value="The handler declines it and passes the link to openUrl, so an http(s) URL opens under the URL Open Mode below. Anything openUrl refuses or rejects falls back to Linking.openURL."
+        />
+      </Card>
+
+      <SectionHeader title="URL Open Mode (LINK-02)" />
+      <Card>
+        <Row
+          label="Open in the app"
+          detail="Off opens http(s) links in the system browser."
+          right={
+            <Switch
+              testID="url-open-mode-switch"
+              value={mode === 'inApp'}
+              onValueChange={onToggleMode}
+              disabled={mode === null || modeOutcome.kind === 'pending'}
+            />
+          }
+        />
+        <Row label="Stored mode" value={mode ?? 'Not read yet'} />
+        <OutcomeRow outcome={modeOutcome} pendingLabel="Setting…" />
+        <Row
+          label="URL"
+          right={
+            <TextInput
+              testID="open-url-input"
+              style={inputStyle}
+              value={urlToOpen}
+              onChangeText={setUrlToOpen}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          }
+        />
+        <Button
+          title="Open URL"
+          onPress={onOpenUrl}
+          disabled={openUrlOutcome.kind === 'pending'}
+        />
+        <OutcomeRow outcome={openUrlOutcome} pendingLabel="Opening…" />
+        <Row
+          label="What it returns"
+          value="true when the SDK started opening an http(s) link, false for anything else, which opens nothing. A universal link or app link this app routes itself must be routed before openUrl, or the in-app browser opens it."
         />
       </Card>
 
@@ -153,7 +279,7 @@ export function DeeplinksScreen() {
         />
         <Row
           label="iOS simulator"
-          value="xcrun simctl push with data keys d and dt (deeplink). A url payload is opened by the system instead of reaching this listener."
+          value="xcrun simctl push with data keys d and dt (url | deeplink)."
         />
       </Card>
     </Screen>

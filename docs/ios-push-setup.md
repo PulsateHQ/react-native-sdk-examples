@@ -143,8 +143,9 @@ Rules for this switch:
 To remove notifications already on screen, call `clearAllNotifications()`.
 It removes every notification the app has posted, including those from other
 libraries, and every local notification the app has scheduled but not yet
-delivered. It sets the app-icon badge to zero. The SDK does the same on
-`logout()` and when a session starts for a different alias.
+delivered. It sets the app-icon badge to zero. `logout()` and a session start
+for a different alias also set the badge to zero, but remove only Pulsate's
+notifications.
 
 ## 3. Forward the AppDelegate callbacks
 

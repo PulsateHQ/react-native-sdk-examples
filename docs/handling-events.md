@@ -76,7 +76,7 @@ more than once.
 
 | Event | Payload | Android | iOS |
 |---|---|---|---|
-| `onLink` | `url: string` | A push tap, a push action button, an in-app or feed-card call to action, or a link tapped in the feed | The same sources, with two exceptions: a push call to action whose destination type is `url` opens Safari, and a feed link whose destination uses the `pulsate://` scheme is consumed by the feed and never reaches `onLink`. Give feed cards an `https://` destination or your app's own scheme |
+| `onLink` | `url: string` | A push tap, a push action button, an in-app or feed-card call to action, or a link tapped in the feed | The same sources, with one exception: a feed link whose destination uses the `pulsate://` scheme is consumed by the feed and never reaches `onLink`. Give feed cards an `https://` destination or your app's own scheme |
 | `onFeedClose` | none | A feed `showFeed()` opened has closed | Same |
 | `onUnauthorizedAction` | `{ action?: string }` | The feed came to the front for an unauthorized user. No `action` | Pulsate refused a push the user tapped, an in-app message, a call to action or an action button. `action` names which. A push that arrives while the app is in front fires nothing |
 | `onBadgeUpdate` | `count: number` | Shortly after the first `configure()` in the app process, not after a JavaScript reload. When a session starts, when the feed closes, with `0` on `logout()` and when `startSession` uses a new alias, and for a Pulsate push that carries a `badge` field. Only when the count changed | With `0` after `clearAllNotifications()`, after `logout()`, and when `startSession` uses a new alias. Also for a push whose `sender` is `Pulsate`, that carries `content-available` and `aps.badge`, in an app that declares the `remote-notification` background mode. Pulsate campaign pushes carry no `content-available` |
@@ -89,7 +89,8 @@ same code runs on both.
 Rules for this step:
 
 - `onLink`: the SDK opens nothing. Route the URLs your app owns and pass the
-  rest to `Linking.openURL`, or the link goes nowhere.
+  rest to `openUrl`, or the link goes nowhere. See
+  [Choose where links open](links.md).
 - `onFeedClose`: a feed Pulsate opened by itself reports no close. See
   [Show the Pulsate feed](feed.md).
 - `onFeedClose`: on Android the event follows the feed screen's destruction.
@@ -157,8 +158,7 @@ addListener('onError', (error) => {
 | A handler fires twice for one event | `addListener` ran twice without a `remove()`, for example on a component that mounted twice | Return `subscription.remove` from the effect, as in step 2 |
 | A handler still fires after its screen closed | The subscription was never removed | Call `remove()` on unmount, as in step 2 |
 | Several `onLink` events arrive at once after startup | Links tapped before the subscription were held and delivered together | Handle each URL. The burst is expected |
-| A tapped link opens nothing | The handler neither routed the URL nor passed it to `Linking.openURL` | Pass URLs your app does not own to `Linking.openURL` |
-| A push call to action opens Safari on iOS without `onLink` | The campaign's destination type is `url` | Use a `deeplink` destination for links your app routes |
+| A tapped link opens nothing | The handler neither routed the URL nor passed it to `openUrl` | Pass URLs your app does not own to `openUrl`, as in [Choose where links open](links.md) |
 | `onLink` brings the app to the front on Android | A link tapped outside the app, such as in a push notification, starts the launch activity | Expected. Route the link once the app is on screen |
 
 ## How it works

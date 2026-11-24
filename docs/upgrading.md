@@ -5,6 +5,56 @@ when you move to a newer version of `@pulsatehq/react-native-sdk`. Each
 section covers one upgrade. Apply them in order if you skip a version. For
 every change in a release, see the [changelog](../CHANGELOG.md).
 
+## Upgrade from 1.2 to 1.3
+
+Version 1.3 adds URL Open Mode: three calls that open web links in the in-app
+browser or the system browser, and moves to the Pulsate iOS SDK 4.11.0
+(PULPulsate) and the Pulsate Android SDK 4.11.0. The existing calls compile
+unchanged.
+
+### Steps
+
+1. Install the new version.
+
+   ```sh
+   npm install @pulsatehq/react-native-sdk@^1.3.0
+   ```
+
+2. In your `onLink` handler, pass every link you do not route to `openUrl`,
+   with `Linking.openURL` as the fallback when it answers `false` or rejects.
+
+   ```ts
+   import { addListener, openUrl } from '@pulsatehq/react-native-sdk';
+   import { Linking } from 'react-native';
+
+   addListener('onLink', async (url) => {
+     if (url.startsWith('myapp://')) {
+       routeInsideApp(url);
+       return;
+     }
+     const opened = await openUrl(url).catch(() => false);
+     if (!opened) {
+       Linking.openURL(url).catch(() => {});
+     }
+   });
+   ```
+
+3. Optional: call `setUrlOpenMode('inApp')` directly after `configure()`
+   resolves, to open web links in the in-app browser.
+
+[Choose where links open](links.md) covers both calls.
+
+### Behaviour changes
+
+| Change | What to do |
+|---|---|
+| On iOS, a push whose destination type is `url` now reaches `onLink`. It used to open Safari without your handler. A handler that routes only your own scheme and drops the rest opens nothing for it | Step 2. Pass links you do not route to `openUrl` or `Linking.openURL` |
+| `setUrlOpenMode` and `getUrlOpenMode` reject with `CONFIGURATION_ERROR` before `configure()` resolves, and so does `openUrl` on iOS. A push that starts the app on the first launch after the upgrade can open once with the previous mode, because your `setUrlOpenMode` call has not run | Call `setUrlOpenMode` directly after `configure()` resolves. In `onLink`, fall back to `Linking.openURL` if `openUrl` rejects |
+| On iOS, `logout()` and a `startSession` with a new alias remove only Pulsate's notifications from the tray. They used to remove every notification, your app's own included. `clearAllNotifications()` still removes every notification | If your app relied on logout to clear its own notifications, call `clearAllNotifications()` after `logout()` |
+| On iOS, a Pulsate push received in the foreground counts as delivered, and a push sent without a message counts against its campaign | Nothing. Delivery counts in the dashboard rise |
+| On iOS, a Pulsate push that wakes the app in the background sends its delivery before it completes. Pulsate completes it at most once, within 25 seconds while the app keeps running | Nothing. Keep returning when `PulsatePush.didReceiveRemoteNotification` answers `true` |
+| On Android, the library adds `androidx.browser` 1.8.0 and two `<queries>` entries to your manifest | Nothing |
+
 ## Upgrade from 1.1 to 1.2
 
 Version 1.2 moves to the Pulsate Android SDK 4.10.0. The iOS SDK is

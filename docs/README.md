@@ -37,6 +37,8 @@ type.
   stop collection.
 - [Subscribe to SDK events](handling-events.md): when to subscribe, removing
   handlers, and which event fires on which platform.
+- [Choose where links open](links.md): opening web links from `onLink` in the
+  in-app browser or the system browser, and routing your own links first.
 - [Upgrade the SDK](upgrading.md): what to change in your app, and what
   behaves differently, for each new version.
 
@@ -53,6 +55,7 @@ the source, so it is exact for the installed version.
 - [Push notifications](api/push-notifications.md)
 - [Location](api/location.md)
 - [Events](api/events.md)
+- [Links](api/links.md)
 - [Crash reporting](api/crash-reporting.md)
 - [Errors](api/errors.md)
 

@@ -156,8 +156,10 @@ every link the SDK owns. Those are a push tap, a push action button, and a
 link tapped inside the feed. They also include an in-app or feed-card CTA
 whose destination is a link, a url or a deeplink. The bridge answers the SDK
 `true` for all of them, so the SDK opens nothing and the handler decides. A
-handler that does not consume the link must call `Linking.openURL(url)`
-itself. That differs from the SDK's own fallback. On Android the SDK opened
+handler that does not consume the link must open it itself: [Links.openUrl](links.md#openurl) for a web link, which follows the [Links.UrlOpenMode](links.md#urlopenmode)
+you chose, or `Linking.openURL(url)` for anything else. A handler that
+routes only its own links and drops the rest opens nothing for the others.
+That differs from the SDK's own fallback. On Android the SDK opened
 the URL from its own activity context, while `Linking.openURL` opens it from
 the host's current activity. The difference is deliberate: which task a link
 lands in is the host's decision, not the SDK's.
@@ -179,12 +181,11 @@ prefixed. On iOS the bridge launches nothing. Every link the SDK hands it is
 tapped inside an app the system has already brought forward. The string is
 the campaign's, with no prefixing. The listener is registered by
 [Sessions.configure](sessions.md#configure). A push tapped before that call is replayed to the
-SDK after it, so the link still arrives. Two iOS differences are worth
+SDK after it, so the link still arrives. One iOS difference is worth
 expecting. A link claimed from inside the SDK's feed leaves the feed on
-screen, so `Linking.openURL` opens the browser over it. A handler that
-navigates in-app does so underneath it until the user closes the feed. A push
-CTA whose destination type is `url` opens Safari without consulting the
-bridge, so that one path never reaches a handler.
+screen, so `openUrl` or `Linking.openURL` opens the browser over it, and a
+handler that navigates in-app does so underneath it until the user closes
+the feed.
 
 `onGeofence` reports that the device has entered, dwelt in or left a geofence
 Pulsate monitors. It fires on Android only; subscribing on iOS is harmless.
@@ -231,12 +232,15 @@ addListener('onFeedClose', () => refreshUnreadCount());
 ```
 
 ```ts
-addListener('onLink', (url) => {
+addListener('onLink', async (url) => {
   if (url.startsWith('myapp://')) {
     navigate(url);
     return;
   }
-  Linking.openURL(url);
+  const opened = await openUrl(url).catch(() => false);
+  if (!opened) {
+    Linking.openURL(url);
+  }
 });
 ```
 
