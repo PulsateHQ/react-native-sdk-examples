@@ -143,7 +143,8 @@ Resolves once the backend has accepted the logout.
 
 [Errors.PulsateError](errors.md#pulsateerror)
 - `CONFIGURATION_ERROR` before [configure](#configure) has resolved.
-- `REQUEST_ERROR` when the logout fails at the backend.
+- `REQUEST_ERROR` when the logout fails at the backend, or on Android when
+  the SDK fails internally.
 
 #### Remarks
 

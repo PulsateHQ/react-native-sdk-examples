@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.3.1
+
+### Patch Changes
+
+- 4bab890: **Android: Pulsate Android SDK 4.12.0**
+
+  - On Android, the SDK's requests (`startSession()`, `logout()` and the others)
+    no longer hang when your app resolves OkHttp 5: their promises now resolve or
+    reject. The Android SDK supports OkHttp 4.12 and 5.x. No change is needed.
+  - On Android, `logout()` now rejects with `REQUEST_ERROR` when the SDK fails
+    internally, instead of never settling. No change is needed.
+  - On Android, unexpected internal SDK errors are now logged at ERROR instead of
+    WARN, so they show in Logcat by default. No change is needed.
+
 ## 1.3.0
 
 ### Minor Changes
